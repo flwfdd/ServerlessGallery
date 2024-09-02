@@ -1,7 +1,7 @@
 /*
  * @Author: flwfdd
  * @Date: 2024-09-01 23:50:00
- * @LastEditTime: 2024-09-02 13:22:54
+ * @LastEditTime: 2024-09-03 00:28:00
  * @Description: _(:з」∠)_
  */
 import Koa from 'koa';
@@ -15,7 +15,7 @@ const authMiddleware = async (ctx: Koa.Context, next: Koa.Next) => {
     if (!token) throw new Error('No token provided');
 
     const decoded = jwt.verify(token, CONFIG.AUTH.JWT_SECRET);
-    ctx.state.user = decoded;
+    ctx.state.username = (decoded as { username: string }).username;
   } catch (error) {
     console.log(error);
     ctx.status = 401;

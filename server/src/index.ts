@@ -1,7 +1,7 @@
 /*
  * @Author: flwfdd
  * @Date: 2024-09-01 12:09:28
- * @LastEditTime: 2024-09-02 13:25:28
+ * @LastEditTime: 2024-09-03 00:26:27
  * @Description: _(:з」∠)_
  */
 import Koa from 'koa';
@@ -51,7 +51,7 @@ router.post('/upload', authMiddleware, upload.single('file'), async (ctx: Koa.Co
       return;
     }
 
-    const image = await uploadImage(file.originalname, file.buffer);
+    const image = await uploadImage(file.originalname, file.buffer, ctx.state.username);
     ctx.body = { image: image, msg: '上传成功OvO' };
 });
 

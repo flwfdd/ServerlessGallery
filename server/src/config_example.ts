@@ -1,7 +1,7 @@
 /*
  * @Author: flwfdd
  * @Date: 2024-09-01 23:49:10
- * @LastEditTime: 2024-09-02 22:06:55
+ * @LastEditTime: 2024-09-03 00:43:26
  * @Description: _(:з」∠)_
  */
 
@@ -16,8 +16,8 @@ const CONFIG = {
     ]
   },
   STORE: {
+    TYPE: 'LOCAL', // 存储类型
     LOCAL: {
-      ACTIVE: true, // 是否启用本地存储
       PATH: './data/' // 本地存储路径
     }
   },

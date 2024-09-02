@@ -1,7 +1,7 @@
 /*
  * @Author: flwfdd
  * @Date: 2024-09-02 00:21:22
- * @LastEditTime: 2024-09-02 21:44:24
+ * @LastEditTime: 2024-09-03 00:30:53
  * @Description: _(:з」∠)_
  */
 import fs from 'fs';
@@ -13,70 +13,77 @@ interface StoreAPI {
   save(filename: string, data: Buffer): Promise<void>;
   load(filename: string): Promise<Buffer>;
   delete(filename: string): Promise<void>;
+  exists(filename: string): Promise<boolean>;
 }
 
 // 本地存储
 class LocalStore implements StoreAPI {
-  async save(filename: string, data: Buffer): Promise<void> {
-    // 检查目录是否存在
-    const img_path = path.join(CONFIG.STORE.LOCAL.PATH, 'img');
-    if (!fs.existsSync(img_path)) {
-      fs.mkdirSync(img_path, { recursive: true });
+  async save(filepath: string, data: Buffer): Promise<void> {
+    const full_path = path.join(CONFIG.STORE.LOCAL.PATH, filepath);
+    // 检查父目录是否存在
+    const parent_path = path.dirname(full_path);
+    if (!fs.existsSync(parent_path)) {
+      fs.mkdirSync(parent_path, { recursive: true });
     }
 
     // 保存文件
-    const full_path = path.join(img_path, filename);
     fs.writeFileSync(full_path, data);
   }
 
-  async load(filename: string): Promise<Buffer> {
-    const full_path = path.join(CONFIG.STORE.LOCAL.PATH, 'img', filename);
+  async load(filepath: string): Promise<Buffer> {
+    const full_path = path.join(CONFIG.STORE.LOCAL.PATH, filepath);
     return fs.readFileSync(full_path);
   }
 
-  async delete(filename: string): Promise<void> {
-    const full_path = path.join(CONFIG.STORE.LOCAL.PATH, 'img', filename);
+  async delete(filepath: string): Promise<void> {
+    const full_path = path.join(CONFIG.STORE.LOCAL.PATH, filepath);
     fs.unlinkSync(full_path);
+  }
+
+  async exists(filepath: string): Promise<boolean> {
+    const full_path = path.join(CONFIG.STORE.LOCAL.PATH, filepath);
+    return fs.existsSync(full_path);
   }
 }
 
 // 存储管家
 class Store implements StoreAPI {
-  private stores: StoreAPI[] = [];
+  private store: StoreAPI;
 
   constructor() {
-    if (CONFIG.STORE.LOCAL.ACTIVE) {
-      this.stores.push(new LocalStore());
+    this.store = new LocalStore();
+  }
+
+  async save(filepath: string, data: Buffer): Promise<void> {
+    try {
+      await this.store.save(filepath, data);
+    } catch (error) {
+      throw new Error('保存失败Orz');
     }
   }
 
-  async save(filename: string, data: Buffer): Promise<void> {
-    for (const store of this.stores) {
-      await store.save(filename, data);
+  async load(filepath: string): Promise<Buffer> {
+    try {
+      return await this.store.load(filepath);
+    } catch (error) {
+      throw new Error('读取失败Orz');
     }
   }
 
-  async load(filename: string): Promise<Buffer> {
-    for (const store of this.stores) {
-      try {
-        return await store.load(filename);
-      } catch (error) {
-        continue;
-      }
+  async delete(filepath: string): Promise<void> {
+    try {
+      await this.store.delete(filepath);
+    } catch (error) {
+      throw new Error('删除失败Orz');
     }
-    throw new Error('文件不存在');
   }
 
-  async delete(filename: string): Promise<void> {
-    for (const store of this.stores) {
-      try {
-        await store.delete(filename);
-        return;
-      } catch (error) {
-        continue;
-      }
+  async exists(filepath: string): Promise<boolean> {
+    try {
+      return await this.store.exists(filepath);
+    } catch (error) {
+      throw new Error('检查失败Orz');
     }
-    throw new Error('文件不存在');
   }
 }
 

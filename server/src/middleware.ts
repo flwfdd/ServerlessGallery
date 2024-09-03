@@ -1,7 +1,7 @@
 /*
  * @Author: flwfdd
  * @Date: 2024-09-01 23:50:00
- * @LastEditTime: 2024-09-03 00:28:00
+ * @LastEditTime: 2024-09-04 01:49:30
  * @Description: _(:з」∠)_
  */
 import Koa from 'koa';
@@ -35,6 +35,20 @@ const errorMiddleware = async (ctx: Koa.Context, next: Koa.Next) => {
       ctx.body = { msg: '太大啦Orz' };
       return;
     }
+    ctx.status = 500;
+    ctx.body = { msg: '出错啦Orz' };
+  }
+  if (ctx.status === 400 && !ctx.body) {
+    ctx.body = { msg: '参数错误Orz' };
+  }
+  if (ctx.status === 401 && !ctx.body) {
+    ctx.body = { msg: '请先登录Orz' };
+  }
+  if (ctx.status === 404 && !ctx.body) {
+    ctx.body = { msg: '404 Not Found' };
+  }
+  if (ctx.status === 500 && !ctx.body) {
+    ctx.body = { msg: '出错啦Orz' };
   }
 };
 

@@ -1,14 +1,15 @@
 /*
  * @Author: flwfdd
  * @Date: 2024-09-02 10:44:18
- * @LastEditTime: 2024-09-03 00:41:46
+ * @LastEditTime: 2024-09-04 01:27:41
  * @Description: _(:з」∠)_
  */
-
 import crypto from 'crypto';
 import { CONFIG } from './config';
 import { store } from './store';
 
+
+// 返回前端的图片信息
 interface ImageAPI {
   filename: string; // 文件名
   url: string; // 原始图片链接
@@ -17,6 +18,7 @@ interface ImageAPI {
   high_url: string; // 高清图片链接
 }
 
+// 存储的图片信息
 type ImagesInfoType = {
   [filename: string]: { // 文件名
     username: string; // 上传用户名
@@ -25,9 +27,24 @@ type ImagesInfoType = {
   }
 }
 
+
+// 将存储的图片信息转换为前端API
+const filename2ImageAPI = (filename: string): ImageAPI => {
+  const url = `${CONFIG.IMAGE.BASE_URL}/${filename}`;
+  return {
+    filename,
+    url,
+    low_url: `${url}${CONFIG.IMAGE.LOW_SUFFIX}`,
+    mid_url: `${url}${CONFIG.IMAGE.MID_SUFFIX}`,
+    high_url: `${url}${CONFIG.IMAGE.HIGH_SUFFIX}`,
+  };
+}
+
+
+// 获取图片信息字典
 const getImagesInfo = async (): Promise<ImagesInfoType> => {
   if (await store.exists('images.json')) {
-    const images_info_buffer = store.load('images.json');
+    const images_info_buffer = await store.load('images.json');
     const images_info = JSON.parse(images_info_buffer.toString());
     return images_info;
   } else {
@@ -35,10 +52,14 @@ const getImagesInfo = async (): Promise<ImagesInfoType> => {
   }
 }
 
+
+// 设置图片信息字典
 const setImagesInfo = async (images_info: ImagesInfoType) => {
   await store.save('images.json', Buffer.from(JSON.stringify(images_info)));
 }
 
+
+// 上传图片
 const uploadImage = async (filename: string, buffer: Buffer, username: string): Promise<ImageAPI> => {
   const suffix = filename.split('.').pop()?.toLowerCase();
   if (!suffix) {
@@ -56,18 +77,26 @@ const uploadImage = async (filename: string, buffer: Buffer, username: string): 
     size: buffer.length,
   };
   await setImagesInfo(images_info);
-
-  const url = `${CONFIG.IMAGE.BASE_URL}/${filename}`;
-  const low_url = `${url}${CONFIG.IMAGE.LOW_SUFFIX}`;
-  const mid_url = `${url}${CONFIG.IMAGE.MID_SUFFIX}`;
-  const high_url = `${url}${CONFIG.IMAGE.HIGH_SUFFIX}`;
-  return {
-    filename,
-    url,
-    low_url,
-    mid_url,
-    high_url,
-  };
+  return filename2ImageAPI(filename);
 }
 
-export { ImageAPI, uploadImage };
+const getImageList = async (order_by: 'time' | 'size', order_type: 'up' | 'down', page: number, page_size: number): Promise<ImageAPI[]> => {
+  const images_info = await getImagesInfo();
+  const images_info_list = Object.keys(images_info).map(key => {
+    return {
+      filename: key,
+      ...images_info[key],
+    };
+  });
+  images_info_list.sort((a, b) => {
+    if (order_by === 'time') {
+      return order_type === 'up' ? a.upload_time.localeCompare(b.upload_time) : b.upload_time.localeCompare(a.upload_time);
+    } else {
+      return order_type === 'up' ? a.size - b.size : b.size - a.size;
+    }
+  });
+  const images_list = images_info_list.slice(page * page_size, (page + 1) * page_size);
+  return images_list.map(image_info => filename2ImageAPI(image_info.filename));
+}
+
+export { ImageAPI, uploadImage, getImageList }

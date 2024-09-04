@@ -1,7 +1,7 @@
 /*
  * @Author: flwfdd
  * @Date: 2024-09-01 12:09:28
- * @LastEditTime: 2024-09-04 01:50:06
+ * @LastEditTime: 2024-09-04 11:26:56
  * @Description: _(:з」∠)_
  */
 import Koa from 'koa';
@@ -14,7 +14,7 @@ import { z } from 'zod';
 import { CONFIG } from './config';
 import { authMiddleware, errorMiddleware } from './middleware';
 import { store } from './store';
-import { ImageAPI, uploadImage, getImageList } from './image';
+import { ImageAPI, uploadImage, getImageList, deleteImage } from './image';
 const app = new Koa();
 const router = new Router();
 
@@ -69,8 +69,8 @@ router.post('/upload', authMiddleware, upload.single('file'), async (ctx: Koa.Co
 router.get('/list', authMiddleware, async (ctx: Koa.Context) => {
   const schema = z.object({
     order: z.enum(['time_up', 'time_down', 'size_up', 'size_down']),
-    page: z.number().int().min(0),
-    page_size: z.number().int().min(1),
+    page: z.coerce.number().int().min(0),
+    page_size: z.coerce.number().int().min(1),
   });
   if (!schema.safeParse(ctx.query).success) {
     ctx.status = 400;
@@ -90,6 +90,20 @@ router.get('/list', authMiddleware, async (ctx: Koa.Context) => {
   ctx.body = { images: images, msg: '获取成功OvO' };
 });
 
+
+// 删除图片
+router.delete('/delete', authMiddleware, async (ctx: Koa.Context) => {
+  const schema = z.object({
+    filename: z.string(),
+  });
+  if (!schema.safeParse(ctx.query).success) {
+    ctx.status = 400;
+    return;
+  }
+  const { filename } = ctx.query;
+  await deleteImage(filename as string);
+  ctx.body = { msg: '删除成功OvO' };
+});
 
 app.listen(CONFIG.PORT, () => {
   console.log(`Server is running on http://127.0.0.1:${CONFIG.PORT}`);

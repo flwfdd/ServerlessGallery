@@ -1,7 +1,7 @@
 /*
  * @Author: flwfdd
  * @Date: 2024-09-02 10:44:18
- * @LastEditTime: 2024-09-04 01:27:41
+ * @LastEditTime: 2024-09-04 11:27:42
  * @Description: _(:з」∠)_
  */
 import crypto from 'crypto';
@@ -16,20 +16,23 @@ interface ImageAPI {
   low_url: string; // 低清图片链接
   mid_url: string; // 中清图片链接
   high_url: string; // 高清图片链接
+  upload_time: string; // 上传时间 格式为ISO
 }
 
 // 存储的图片信息
+interface ImageInfoType {
+  username: string; // 上传用户名
+  upload_time: string; // 上传时间 格式为ISO
+  size: number; // 文件大小
+}
+
 type ImagesInfoType = {
-  [filename: string]: { // 文件名
-    username: string; // 上传用户名
-    upload_time: string; // 上传时间 格式为ISO
-    size: number; // 文件大小
-  }
+  [filename: string]: ImageInfoType; // 文件名
 }
 
 
 // 将存储的图片信息转换为前端API
-const filename2ImageAPI = (filename: string): ImageAPI => {
+const filename2ImageAPI = (filename: string, image_info: ImageInfoType): ImageAPI => {
   const url = `${CONFIG.IMAGE.BASE_URL}/${filename}`;
   return {
     filename,
@@ -37,6 +40,7 @@ const filename2ImageAPI = (filename: string): ImageAPI => {
     low_url: `${url}${CONFIG.IMAGE.LOW_SUFFIX}`,
     mid_url: `${url}${CONFIG.IMAGE.MID_SUFFIX}`,
     high_url: `${url}${CONFIG.IMAGE.HIGH_SUFFIX}`,
+    upload_time: image_info.upload_time,
   };
 }
 
@@ -71,15 +75,18 @@ const uploadImage = async (filename: string, buffer: Buffer, username: string): 
 
   // 更新图片信息
   const images_info = await getImagesInfo();
-  images_info[filename] = {
+  const image_info: ImageInfoType = {
     username,
     upload_time: new Date().toISOString(),
     size: buffer.length,
   };
+  images_info[filename] = image_info;
   await setImagesInfo(images_info);
-  return filename2ImageAPI(filename);
+  return filename2ImageAPI(filename, image_info);
 }
 
+
+// 获取图片列表
 const getImageList = async (order_by: 'time' | 'size', order_type: 'up' | 'down', page: number, page_size: number): Promise<ImageAPI[]> => {
   const images_info = await getImagesInfo();
   const images_info_list = Object.keys(images_info).map(key => {
@@ -96,7 +103,16 @@ const getImageList = async (order_by: 'time' | 'size', order_type: 'up' | 'down'
     }
   });
   const images_list = images_info_list.slice(page * page_size, (page + 1) * page_size);
-  return images_list.map(image_info => filename2ImageAPI(image_info.filename));
+  return images_list.map(image_info => filename2ImageAPI(image_info.filename, image_info));
 }
 
-export { ImageAPI, uploadImage, getImageList }
+
+// 删除图片
+const deleteImage = async (filename: string) => {
+  await store.delete('/img/' + filename);
+  const images_info = await getImagesInfo();
+  delete images_info[filename];
+  await setImagesInfo(images_info);
+}
+
+export { ImageAPI, uploadImage, getImageList, deleteImage }

@@ -1,0 +1,27 @@
+{
+    "common": {
+        "primaryColor": "#FF9A57FF",
+        "primaryColorHover": "#FFAB73FF",
+        "primaryColorSuppl": "#FFAB73FF",
+        "primaryColorPressed": "#EB8E50FF",
+        "fontFamily": "Source Han Serif CN, Source Han Serif SC, Source Han Serif, Noto Serif CJK, Noto Serif SC, Noto Serif, serif",
+        "fontWeight": "500",
+        "fontWeightStrong": "700",
+        "borderRadius": "4px",
+        "infoColor": "#00ABD6FF",
+        "infoColorHover": "#00BCEBFF",
+        "infoColorSuppl": "#00BCEBFF",
+        "infoColorPressed": "#0087A8FF",
+        "warningColor": "#F0A020FF",
+        "textColor2": "#245D6BFF",
+        "textColor1": "#027B99FF",
+        "textColor3": "#809ba8FF",
+        "fontSize": "16px"
+    },
+    "Badge": {
+        "fontFamily": "Source Han Serif CN, Source Han Serif SC, Source Han Serif, Noto Serif CJK, Noto Serif SC, Noto Serif, serif"
+    },
+    "Divider": {
+        "textColor": "#809BA8FF"
+    }
+}

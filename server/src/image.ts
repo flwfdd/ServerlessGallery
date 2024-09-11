@@ -1,7 +1,7 @@
 /*
  * @Author: flwfdd
  * @Date: 2024-09-02 10:44:18
- * @LastEditTime: 2024-09-04 11:27:42
+ * @LastEditTime: 2024-09-11 17:11:40
  * @Description: _(:з」∠)_
  */
 import crypto from 'crypto';
@@ -33,7 +33,7 @@ type ImagesInfoType = {
 
 // 将存储的图片信息转换为前端API
 const filename2ImageAPI = (filename: string, image_info: ImageInfoType): ImageAPI => {
-  const url = `${CONFIG.IMAGE.BASE_URL}/${filename}`;
+  const url = `${CONFIG.IMAGE.BASE_URL}/img/${filename}`;
   return {
     filename,
     url,

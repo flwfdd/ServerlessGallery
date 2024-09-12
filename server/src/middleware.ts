@@ -1,7 +1,7 @@
 /*
  * @Author: flwfdd
  * @Date: 2024-09-01 23:50:00
- * @LastEditTime: 2024-09-04 01:49:30
+ * @LastEditTime: 2024-09-12 21:12:12
  * @Description: _(:з」∠)_
  */
 import Koa from 'koa';
@@ -15,13 +15,18 @@ const authMiddleware = async (ctx: Koa.Context, next: Koa.Next) => {
     if (!token) throw new Error('No token provided');
 
     const decoded = jwt.verify(token, CONFIG.AUTH.JWT_SECRET);
-    ctx.state.username = (decoded as { username: string }).username;
+    for (const user of CONFIG.AUTH.USERS) {
+      if (user.username === (decoded as { username: string }).username) {
+        ctx.state.username = user.username;
+        break;
+      }
+    }
+    if (!ctx.state.username) throw new Error('Unknown user');
+    await next();
   } catch (error) {
-    console.log(error);
     ctx.status = 401;
     ctx.body = { msg: '请先登录' };
   }
-  await next();
 };
 
 // 错误处理中间件

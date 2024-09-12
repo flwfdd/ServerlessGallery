@@ -1,12 +1,13 @@
 /*
  * @Author: flwfdd
  * @Date: 2024-09-02 10:44:18
- * @LastEditTime: 2024-09-11 17:11:40
+ * @LastEditTime: 2024-09-12 21:18:52
  * @Description: _(:з」∠)_
  */
 import crypto from 'crypto';
 import { CONFIG } from './config';
 import { store } from './store';
+import path from 'path';
 
 
 // 返回前端的图片信息
@@ -33,7 +34,7 @@ type ImagesInfoType = {
 
 // 将存储的图片信息转换为前端API
 const filename2ImageAPI = (filename: string, image_info: ImageInfoType): ImageAPI => {
-  const url = `${CONFIG.IMAGE.BASE_URL}/img/${filename}`;
+  const url = path.join(CONFIG.IMAGE.BASE_URL, 'img', filename);
   return {
     filename,
     url,

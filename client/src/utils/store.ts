@@ -1,7 +1,7 @@
 /*
  * @Author: flwfdd
  * @Date: 2024-09-10 16:37:51
- * @LastEditTime: 2024-09-10 16:42:34
+ * @LastEditTime: 2024-09-24 14:57:29
  * @Description: _(:з」∠)_
  */
 import { reactive, watch } from 'vue'
@@ -15,7 +15,7 @@ else x = {};
 const store = reactive({
   version: package_json.version,
   api_url: "http://127.0.0.1:9000",
-  jwt: x.jwt || "",
+  token: x.token || "",
   theme_mode: x.theme_mode || "auto", // auto dark light
 })
 

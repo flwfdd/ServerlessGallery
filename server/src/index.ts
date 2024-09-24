@@ -1,10 +1,11 @@
 /*
  * @Author: flwfdd
  * @Date: 2024-09-01 12:09:28
- * @LastEditTime: 2024-09-04 11:26:56
+ * @LastEditTime: 2024-09-24 15:23:33
  * @Description: _(:з」∠)_
  */
 import Koa from 'koa';
+import cors from '@koa/cors';
 const Router = require('@koa/router');
 const { bodyParser } = require('@koa/bodyparser');
 const multer = require('@koa/multer');
@@ -13,17 +14,26 @@ import { z } from 'zod';
 
 import { CONFIG } from './config';
 import { authMiddleware, errorMiddleware } from './middleware';
-import { store } from './store';
-import { ImageAPI, uploadImage, getImageList, deleteImage } from './image';
+import { uploadImage, getImageList, deleteImage } from './image';
 const app = new Koa();
 const router = new Router();
 
+app.use(cors());
 app.use(bodyParser());
 app.use(errorMiddleware);
 app.use(router.routes()).use(router.allowedMethods());
 
 router.get('/', (ctx: Koa.Context) => {
   ctx.body = 'Hello, Serverless Gallery!';
+});
+
+// 用户接口
+router.get('/user',authMiddleware, (ctx: Koa.Context) => {
+  if(ctx.state.username){
+    ctx.body = { username: ctx.state.username };
+  } else {
+    ctx.status = 401;
+  }
 });
 
 // 登录接口

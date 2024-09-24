@@ -1,7 +1,7 @@
 /*
  * @Author: flwfdd
  * @Date: 2024-09-01 23:50:00
- * @LastEditTime: 2024-09-12 21:12:12
+ * @LastEditTime: 2024-09-24 15:11:15
  * @Description: _(:з」∠)_
  */
 import Koa from 'koa';
@@ -25,7 +25,7 @@ const authMiddleware = async (ctx: Koa.Context, next: Koa.Next) => {
     await next();
   } catch (error) {
     ctx.status = 401;
-    ctx.body = { msg: '请先登录' };
+    ctx.body = { msg: '请先登录Orz' };
   }
 };
 

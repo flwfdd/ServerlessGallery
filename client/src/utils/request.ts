@@ -1,7 +1,7 @@
 /*
  * @Author: flwfdd
  * @Date: 2024-09-10 16:36:30
- * @LastEditTime: 2024-09-11 12:40:35
+ * @LastEditTime: 2024-09-24 15:35:38
  * @Description: _(:з」∠)_
  */
 import axios from 'axios';
@@ -15,7 +15,7 @@ const http = axios.create();
 http.interceptors.request.use(
   (config: any) => {
     if (config.url[0] == '/') config.url = store.api_url + config.url;
-    config.headers['Authorization'] = 'Bearer ' + store.jwt;
+    config.headers['Authorization'] = 'Bearer ' + store.token;
     return config;
   },
   (err) => {
@@ -35,7 +35,7 @@ http.interceptors.response.use(
       else window.$message.error('出错了Orz');
     }
     else if (err.request.status == 401) {
-      store.jwt = "";
+      store.token = "";
       // 自动跳转
       const route = router.currentRoute.value;
       if (route.name != "login") {

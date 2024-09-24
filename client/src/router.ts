@@ -1,7 +1,7 @@
 /*
  * @Author: flwfdd
  * @Date: 2024-09-10 16:38:19
- * @LastEditTime: 2024-09-10 16:54:10
+ * @LastEditTime: 2024-09-24 15:13:33
  * @Description: _(:з」∠)_
  */
 import { createRouter, createWebHistory } from 'vue-router'
@@ -17,7 +17,7 @@ const router = createRouter({
     {
       path: '/login',
       name: 'login',
-      component: () => import('@/views/404.vue'),
+      component: () => import('@/views/Login.vue'),
       meta: { keepAlive: false }
     },
     {

@@ -1,7 +1,7 @@
 <!--
  * @Author: flwfdd
  * @Date: 2024-09-11 12:21:15
- * @LastEditTime: 2024-09-11 15:54:15
+ * @LastEditTime: 2024-09-24 15:44:37
  * @Description: _(:з」∠)_
 -->
 <script setup lang="ts">
@@ -13,6 +13,7 @@ import { onMounted, computed } from 'vue';
 import RefreshOutlined from '@vicons/material/RefreshOutlined'
 import ArrowBackOutlined from '@vicons/material/ArrowBackOutlined'
 import BrightnessAutoOutlined from '@vicons/material/BrightnessAutoOutlined'
+import AccountCircleOutlined from '@vicons/material/AccountCircleOutlined'
 import LightModeOutlined from '@vicons/material/LightModeOutlined'
 import DarkModeOutlined from '@vicons/material/DarkModeOutlined'
 import GlobalComponents from './components/GlobalComponents.vue';
@@ -75,7 +76,7 @@ onMounted(() => {
         <n-layout-header bordered style="background-color:var(--primary-color)">
           <n-space class="container" justify="space-between">
             <div style="height:42px;display: flex;align-items: center;padding: 4px;">
-              <n-button @click="router.push('/home')" text style="font-size: 24px;color:#FFF">画廊图床</n-button>
+              <n-button @click="router.push('/')" text style="font-size: 24px;color:#FFF">画廊图床</n-button>
             </div>
             <div style="display:flex;align-items:center;height:100%;">
               <n-button @click="router.go(-1)" quaternary circle size="large" color="white">
@@ -101,6 +102,13 @@ onMounted(() => {
                   </n-icon>
                 </template>
               </n-button>
+              <n-button @click="router.push('/login')" quaternary circle size="large" color="white">
+                <template #icon>
+                  <n-icon>
+                    <AccountCircleOutlined />
+                  </n-icon>
+                </template>
+              </n-button>
             </div>
           </n-space>
         </n-layout-header>
@@ -119,11 +127,9 @@ onMounted(() => {
           <h4 style="margin: auto;font-size: 14px;">{{ hitokoto }}</h4>
           <div><n-button @click="ToTop" text size="large">👆回到顶部👆</n-button></div>
           <div>
-            <n-a href="https://github.com/BIT101-dev" target="_blank">GitHub</n-a>
-            ｜
-            <n-a href="https://bit101-project.feishu.cn/wiki/OY1Xw6y27iNZqgkSDCkc5Cfdnjc" target="_blank">加入BIT101</n-a>
+            <n-a href="https://github.com/flwfdd/ServerlessGallery" target="_blank">GitHub</n-a>
           </div>
-          <div style="font-size: 14px;">Powered⚡ by BIT101 Project Team with 💖.</div>
+          <div style="font-size: 14px;">Powered⚡ by flwfdd with 💖.</div>
 
         </n-layout-footer>
       </n-layout>

@@ -1,7 +1,7 @@
 /*
  * @Author: flwfdd
  * @Date: 2024-09-10 16:47:57
- * @LastEditTime: 2024-09-10 16:53:30
+ * @LastEditTime: 2024-09-24 15:51:42
  * @Description: _(:з」∠)_
  */
 import { ref } from "vue";
@@ -12,7 +12,7 @@ import router from "@/router";
 //一言
 const hitokoto = ref("");
 function UpHitokoto() {
-  http.get("https://v1.hitokoto.cn/").then((res) => {
+  http.get("https://international.v1.hitokoto.cn/").then((res) => {
     hitokoto.value = res.data.hitokoto + "  ——" + res.data.from;
   });
 }

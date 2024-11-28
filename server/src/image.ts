@@ -1,7 +1,7 @@
 /*
  * @Author: flwfdd
  * @Date: 2024-09-02 10:44:18
- * @LastEditTime: 2024-09-12 21:18:52
+ * @LastEditTime: 2024-11-28 12:27:43
  * @Description: _(:з」∠)_
  */
 import crypto from 'crypto';
@@ -12,11 +12,12 @@ import path from 'path';
 
 // 返回前端的图片信息
 interface ImageAPI {
-  filename: string; // 文件名
+  mid: string; // 图片ID 即文件名
   url: string; // 原始图片链接
   low_url: string; // 低清图片链接
   mid_url: string; // 中清图片链接
   high_url: string; // 高清图片链接
+  text: string; // 图片备注
   upload_time: string; // 上传时间 格式为ISO
 }
 
@@ -25,22 +26,24 @@ interface ImageInfoType {
   username: string; // 上传用户名
   upload_time: string; // 上传时间 格式为ISO
   size: number; // 文件大小
+  text: string; // 图片备注
 }
 
 type ImagesInfoType = {
-  [filename: string]: ImageInfoType; // 文件名
+  [mid: string]: ImageInfoType; // 文件名
 }
 
 
 // 将存储的图片信息转换为前端API
-const filename2ImageAPI = (filename: string, image_info: ImageInfoType): ImageAPI => {
-  const url = path.join(CONFIG.IMAGE.BASE_URL, 'img', filename);
+const mid2ImageAPI = (mid: string, image_info: ImageInfoType): ImageAPI => {
+  const url = path.join(CONFIG.IMAGE.BASE_URL, 'img', mid);
   return {
-    filename,
+    mid,
     url,
     low_url: `${url}${CONFIG.IMAGE.LOW_SUFFIX}`,
     mid_url: `${url}${CONFIG.IMAGE.MID_SUFFIX}`,
     high_url: `${url}${CONFIG.IMAGE.HIGH_SUFFIX}`,
+    text: image_info.text,
     upload_time: image_info.upload_time,
   };
 }
@@ -71,8 +74,8 @@ const uploadImage = async (filename: string, buffer: Buffer, username: string): 
     throw new Error('提取文件后缀错误');
   }
   const md5 = crypto.createHash('md5').update(buffer).digest('hex');
-  filename = `${md5}.${suffix}`;
-  store.save('/img/' + filename, buffer);
+  const mid = `${md5}.${suffix}`;
+  store.save('/img/' + mid, buffer);
 
   // 更新图片信息
   const images_info = await getImagesInfo();
@@ -80,10 +83,11 @@ const uploadImage = async (filename: string, buffer: Buffer, username: string): 
     username,
     upload_time: new Date().toISOString(),
     size: buffer.length,
+    text: "",
   };
-  images_info[filename] = image_info;
+  images_info[mid] = image_info;
   await setImagesInfo(images_info);
-  return filename2ImageAPI(filename, image_info);
+  return mid2ImageAPI(mid, image_info);
 }
 
 
@@ -92,7 +96,7 @@ const getImageList = async (order_by: 'time' | 'size', order_type: 'up' | 'down'
   const images_info = await getImagesInfo();
   const images_info_list = Object.keys(images_info).map(key => {
     return {
-      filename: key,
+      mid: key,
       ...images_info[key],
     };
   });
@@ -104,16 +108,23 @@ const getImageList = async (order_by: 'time' | 'size', order_type: 'up' | 'down'
     }
   });
   const images_list = images_info_list.slice(page * page_size, (page + 1) * page_size);
-  return images_list.map(image_info => filename2ImageAPI(image_info.filename, image_info));
+  return images_list.map(image_info => mid2ImageAPI(image_info.mid, image_info));
 }
 
 
 // 删除图片
-const deleteImage = async (filename: string) => {
-  await store.delete('/img/' + filename);
+const deleteImage = async (mid: string) => {
+  await store.delete('/img/' + mid);
   const images_info = await getImagesInfo();
-  delete images_info[filename];
+  delete images_info[mid];
   await setImagesInfo(images_info);
 }
 
-export { ImageAPI, uploadImage, getImageList, deleteImage }
+// 编辑图片备注
+const editImage = async (mid: string, text: string) => {
+  const images_info = await getImagesInfo();
+  images_info[mid].text = text;
+  await setImagesInfo(images_info);
+}
+
+export { ImageAPI, uploadImage, getImageList, deleteImage, editImage };

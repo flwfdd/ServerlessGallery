@@ -1,0 +1,28 @@
+{
+  "name": "serverless-fs",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build --mode client && vite build",
+    "preview": "$npm_execpath run build && wrangler dev",
+    "deploy": "$npm_execpath run build && wrangler deploy",
+    "cf-typegen": "wrangler types --env-interface CloudflareBindings"
+  },
+  "dependencies": {
+    "@headlessui/vue": "^1.7.23",
+    "hono": "^4.7.10",
+    "vue": "^3.5.14",
+    "zod": "^3.25.17"
+  },
+  "devDependencies": {
+    "@cloudflare/vite-plugin": "^0.1.15",
+    "@hono/vite-build": "^1.5.0",
+    "@tailwindcss/vite": "^4.1.7",
+    "@vitejs/plugin-vue": "^5.2.4",
+    "tailwindcss": "^4.1.7",
+    "vite": "^6.1.1",
+    "vite-plugin-ssr-hot-reload": "^0.4.1",
+    "wrangler": "^4.4.0"
+  },
+  "packageManager": "pnpm@10.6.2+sha512.47870716bea1572b53df34ad8647b42962bc790ce2bf4562ba0f643237d7302a3d6a8ecef9e4bdfc01d23af1969aa90485d4cebb0b9638fa5ef1daef656f6c1b"
+}

@@ -1,9 +1,31 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "serverless-fs",
-  "compatibility_date": "2024-04-01",
+  "name": "serverless-gallery",
   "main": "src/api/index.ts",
   "assets": {
     "directory": "./dist"
+  },
+  "compatibility_date": "2025-05-08",
+  "routes": [
+    {
+      "pattern": "gallery.0u0.fun",
+      "custom_domain": true
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "BUCKET",
+      "bucket_name": "gallery"
+    }
+  ],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "gallery",
+      "database_id": "15c5f9e8-f586-4f73-828b-aa3ca95701f7"
+    }
+  ],
+  "images": {
+    "binding": "IMAGES"
   }
 }

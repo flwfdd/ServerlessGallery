@@ -10,7 +10,8 @@
       "DOM"
     ],
     "types": [
-      "vite/client"
+      "vite/client",
+      "@cloudflare/workers-types"
     ],
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true

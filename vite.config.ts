@@ -3,11 +3,12 @@ import honoBuild from '@hono/vite-build/cloudflare-workers'
 import tailwindcss from '@tailwindcss/vite'
 import vue from '@vitejs/plugin-vue'
 import { defineConfig } from 'vite'
-import ssrHotReload from 'vite-plugin-ssr-hot-reload'
 
 export default defineConfig(({ command, mode, isSsrBuild }) => {
   if (command === 'serve') {
-    return { plugins: [tailwindcss(), vue(), ssrHotReload(), cloudflare()] }
+    return {
+      plugins: [tailwindcss(), vue(), cloudflare()]
+    }
   }
 
   if (mode === 'client') {

@@ -17,7 +17,7 @@ const htmlShell = (clientScriptPath: string, stylePath: string) => `
     <head>
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>ServerlessGallery</title>
+      <title>ZenGallery</title>
       <link href="${stylePath}" rel="stylesheet">
     </head>
     <body>
@@ -98,7 +98,7 @@ const route = app
       const dbService = new CloudflareD1Service(c.env.DB as D1Database);
 
       try {
-        const { file, title, description } = c.req.valid('form');
+        const { file } = c.req.valid('form');
         const arrayBuffer = await file.arrayBuffer();
 
         const digest = await crypto.subtle.digest('MD5', arrayBuffer);
@@ -111,14 +111,8 @@ const route = app
         let existingFileRecord = await dbService.getFile(filename);
 
         if (existingFileRecord) {
-          if (existingFileRecord.title !== title || existingFileRecord.description !== description) {
-            existingFileRecord.title = title;
-            existingFileRecord.description = description;
-            await dbService.saveFile(existingFileRecord);
-          }
-
           return c.json({
-            message: 'File already exists.',
+            message: `${file.name} already exists.`,
             info: existingFileRecord,
             url: `/files/${existingFileRecord.filename}`,
           });
@@ -129,8 +123,8 @@ const route = app
 
         const metadata: FileMetadata = {
           filename: filename,
-          title: title || file.name,
-          description: description || '',
+          title: file.name,
+          description: '',
           mime_type: file.type || 'application/octet-stream',
           size: arrayBuffer.byteLength,
           uploaded_at: new Date().toISOString(),
@@ -138,7 +132,7 @@ const route = app
         await dbService.saveFile(metadata);
 
         return c.json({
-          message: 'File uploaded successfully!',
+          message: `${file.name} uploaded successfully!`,
           info: metadata,
           url: `/files/${filename}`,
         });

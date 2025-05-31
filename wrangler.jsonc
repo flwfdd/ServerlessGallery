@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "serverless-gallery",
+  "name": "zen-gallery",
   "main": "src/api/index.ts",
   "assets": {
     "directory": "./dist"

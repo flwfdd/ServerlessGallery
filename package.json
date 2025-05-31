@@ -1,5 +1,5 @@
 {
-  "name": "serverless-gallery",
+  "name": "zen-gallery",
   "type": "module",
   "scripts": {
     "dev": "vite",

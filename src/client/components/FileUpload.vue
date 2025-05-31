@@ -17,9 +17,8 @@
           <div
             class="border-3 border-dashed border-cyan-200 dark:border-cyan-400/50 bg-cyan-50 dark:bg-cyan-900/20 rounded-2xl p-12 text-center transition-all duration-200 group-hover:border-cyan-300 dark:group-hover:border-cyan-400/70 group-hover:bg-cyan-100 dark:group-hover:bg-cyan-900/30 group-hover:scale-[1.02]">
             <div
-              class="inline-flex items-center justify-center w-16 h-16 bg-cyan-200 dark:bg-cyan-600/50 rounded-2xl mb-4 transform rotate-3 group-hover:rotate-6 group-hover:scale-110 transition-all duration-200">
-              <Upload
-                class="w-8 h-8 text-cyan-700 dark:text-cyan-300 transition-transform group-hover:translate-y-[-2px]" />
+              class="inline-flex items-center justify-center w-16 h-16 bg-cyan-200 dark:bg-cyan-600/50 rounded-2xl mb-4 transform group-hover:rotate-6 group-hover:scale-110 transition-all duration-200">
+              <Upload class="w-8 h-8 text-cyan-700 dark:text-cyan-300" />
             </div>
             <p
               class="text-lg font-semibold text-slate-800 dark:text-slate-200 mb-2 group-hover:text-cyan-800 dark:group-hover:text-cyan-300 transition-colors duration-200">
@@ -37,7 +36,8 @@
             <div class="flex items-center gap-4">
               <div
                 class="w-12 h-12 bg-rose-200 dark:bg-rose-600/50 rounded-xl flex items-center justify-center transform -rotate-2 hover:rotate-0 transition-transform duration-200">
-                <component :is="getFileIcon(index)" class="w-6 h-6 text-rose-700 dark:text-rose-300" />
+                <component :is="getFileIcon(index)" :class="{ 'animate-spin': isUploading }"
+                  class="w-6 h-6 text-rose-700 dark:text-rose-300" />
               </div>
               <div>
                 <p class="font-semibold text-slate-800 dark:text-slate-200">{{ file.name }}</p>
@@ -108,7 +108,7 @@
 
           <button @click="uploadFiles" :disabled="isUploading"
             class="bg-cyan-300 dark:bg-cyan-600 hover:bg-cyan-400 dark:hover:bg-cyan-500 disabled:bg-slate-300 dark:disabled:bg-slate-600 text-slate-800 dark:text-slate-100 font-semibold px-8 py-3 rounded-2xl border-2 border-cyan-400 dark:border-cyan-500 disabled:border-slate-400 dark:disabled:border-slate-600 transition-all duration-150 flex items-center gap-2 hover:scale-105 active:scale-95 disabled:hover:scale-100 cursor-pointer shadow-[3px_3px_0px_0px_rgba(6,182,212,0.2)]">
-            <component :is="isUploading ? Loader2 : Upload"
+            <component :is="isUploading ? LoaderCircle : Upload"
               :class="{ 'animate-spin': isUploading, 'animate-bounce': !isUploading }" class="w-5 h-5" />
             {{ isUploading ? t('upload.uploading') : t('upload.uploadButton', {
               count: selectedFiles.length
@@ -149,7 +149,7 @@
 
 <script setup lang="ts">
 import { hc } from 'hono/client';
-import { Check, CheckCircle, File, Loader2, Upload, X, XCircle } from 'lucide-vue-next';
+import { Check, CheckCircle, File, LoaderCircle, Upload, X, XCircle } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import type { AppType } from '../../api/index';
@@ -185,7 +185,7 @@ const overallProgress = computed(() => {
 // 获取文件图标
 const getFileIcon = (index: number) => {
   const status = fileStatuses.value[index];
-  if (status === 'uploading') return Loader2;
+  if (status === 'uploading') return LoaderCircle;
   if (status === 'completed') return Check;
   if (status === 'error') return XCircle;
   return File;

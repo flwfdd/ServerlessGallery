@@ -15,8 +15,7 @@
         "dateLocale": "zh-CN"
     },
     "header": {
-        "title": "Serverless Gallery",
-        "subtitle": "云端文件画廊"
+        "title": "Zen Gallery"
     },
     "theme": {
         "light": "浅色模式",
@@ -116,7 +115,6 @@
         "english": "English"
     },
     "errors": {
-        "fileTooBig": "文件过大，最大支持 50MB",
         "uploadFailed": "请先选择文件",
         "loadFailed": "加载失败",
         "networkError": "网络错误，请检查连接",

@@ -15,8 +15,7 @@
         "dateLocale": "en-US"
     },
     "header": {
-        "title": "Serverless Gallery",
-        "subtitle": "Cloud File Gallery"
+        "title": "Zen Gallery"
     },
     "theme": {
         "light": "Light Mode",
@@ -116,7 +115,6 @@
         "english": "English"
     },
     "errors": {
-        "fileTooBig": "File too large, maximum 50MB supported",
         "uploadFailed": "Please select files first",
         "loadFailed": "Load failed",
         "networkError": "Network error, please check connection",

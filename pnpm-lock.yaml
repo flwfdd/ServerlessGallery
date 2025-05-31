@@ -23,6 +23,9 @@ importers:
       vue:
         specifier: ^3.5.14
         version: 3.5.14
+      vue-i18n:
+        specifier: '11'
+        version: 11.1.4(vue@3.5.14)
       zod:
         specifier: ^3.25.20
         version: 3.25.20
@@ -411,6 +414,18 @@ packages:
     cpu: [x64]
     os: [win32]
 
+  '@intlify/core-base@11.1.4':
+    resolution: {integrity: sha512-VNIanL84HNBNAoJjPA2V8EykT5NtgNDquO2MsDQcSheo7EcCt4uvH14IHBEDKVoL6k38NNICLuRhtKOKqW2ylA==}
+    engines: {node: '>= 16'}
+
+  '@intlify/message-compiler@11.1.4':
+    resolution: {integrity: sha512-fQWJwTOBFNFGNr4I5k629hQxTGEKsDWhhTzr6Y4CN4OXJw/dLB/VbbQm5jlylqnv44RBZN5GSD+d1nWpNcAR5A==}
+    engines: {node: '>= 16'}
+
+  '@intlify/shared@11.1.4':
+    resolution: {integrity: sha512-zOW2L5+QnWRQgM/7WNSPxa6E0F3wR2/KEQV7P4s4AXzxzmg0MuzLNiixvkRJU5h0Xb3DnHic6zybKva28kabDw==}
+    engines: {node: '>= 16'}
+
   '@isaacs/fs-minipass@4.0.1':
     resolution: {integrity: sha512-wgm9Ehl2jpeqP3zw/7mo3kRHFp5MEDhqAdwy1fTGkHAwnkGOVsgpvQhL8B5n1qlb01jV3n/bI0ZfZp5lWA1k4w==}
     engines: {node: '>=18.0.0'}
@@ -679,6 +694,9 @@ packages:
 
   '@vue/compiler-ssr@3.5.14':
     resolution: {integrity: sha512-Y0G7PcBxr1yllnHuS/NxNCSPWnRGH4Ogrp0tsLA5QemDZuJLs99YjAKQ7KqkHE0vCg4QTKlQzXLKCMF7WPSl7Q==}
+
+  '@vue/devtools-api@6.6.4':
+    resolution: {integrity: sha512-sGhTPMuXqZ1rVOk32RylztWkfXTRhuS7vgAKv0zjqk8gbsHkJ7xfFf+jbySxt7tWObEJwyKaHMikV/WGDiQm8g==}
 
   '@vue/reactivity@3.5.14':
     resolution: {integrity: sha512-7cK1Hp343Fu/SUCCO52vCabjvsYu7ZkOqyYu7bXV9P2yyfjUMUXHZafEbq244sP7gf+EZEz+77QixBTuEqkQQw==}
@@ -1037,6 +1055,12 @@ packages:
       yaml:
         optional: true
 
+  vue-i18n@11.1.4:
+    resolution: {integrity: sha512-0B2Q4rTSzQigfIQnsgNMgWOekouT2lr3hiKG3k7q3fQykr968BRdIUDnIvHisq/f1FPKbBznHpvAyGg78eDAyg==}
+    engines: {node: '>= 16'}
+    peerDependencies:
+      vue: ^3.0.0
+
   vue@3.5.14:
     resolution: {integrity: sha512-LbOm50/vZFG6Mhy6KscQYXZMQ0LMCC/y40HDJPPvGFQ+i/lUH+PJHR6C3assgOQiXdl6tAfsXHbXYVBZZu65ew==}
     peerDependencies:
@@ -1326,6 +1350,18 @@ snapshots:
   '@img/sharp-win32-x64@0.33.5':
     optional: true
 
+  '@intlify/core-base@11.1.4':
+    dependencies:
+      '@intlify/message-compiler': 11.1.4
+      '@intlify/shared': 11.1.4
+
+  '@intlify/message-compiler@11.1.4':
+    dependencies:
+      '@intlify/shared': 11.1.4
+      source-map-js: 1.2.1
+
+  '@intlify/shared@11.1.4': {}
+
   '@isaacs/fs-minipass@4.0.1':
     dependencies:
       minipass: 7.1.2
@@ -1548,6 +1584,8 @@ snapshots:
     dependencies:
       '@vue/compiler-dom': 3.5.14
       '@vue/shared': 3.5.14
+
+  '@vue/devtools-api@6.6.4': {}
 
   '@vue/reactivity@3.5.14':
     dependencies:
@@ -1899,6 +1937,13 @@ snapshots:
       fsevents: 2.3.3
       jiti: 2.4.2
       lightningcss: 1.30.1
+
+  vue-i18n@11.1.4(vue@3.5.14):
+    dependencies:
+      '@intlify/core-base': 11.1.4
+      '@intlify/shared': 11.1.4
+      '@vue/devtools-api': 6.6.4
+      vue: 3.5.14
 
   vue@3.5.14:
     dependencies:

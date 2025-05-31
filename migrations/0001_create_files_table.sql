@@ -1,5 +1,4 @@
 -- Migration number: 0001 	 2024-05-22_16_00_00_create_files_table.sql
-
 DROP TABLE IF EXISTS files;
 
 CREATE TABLE files (
@@ -11,7 +10,7 @@ CREATE TABLE files (
     uploaded_at TEXT NOT NULL   -- ISO 8601 datetime string, e.g., YYYY-MM-DDTHH:MM:SSZ
 );
 
--- Optional: Create indexes for columns that will be frequently searched or sorted
+-- Create indexes for columns that will be frequently searched or sorted
 CREATE INDEX IF NOT EXISTS idx_files_title ON files (title);
 CREATE INDEX IF NOT EXISTS idx_files_description ON files (description);
 CREATE INDEX IF NOT EXISTS idx_files_mime_type ON files (mime_type);

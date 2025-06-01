@@ -64,6 +64,9 @@ pnpm install
 # 配置 Cloudflare
 # 编辑 wrangler.jsonc，设置你的域名和资源名称
 
+# 构建
+pnpm build
+
 # 部署
 pnpm deploy
 ```
@@ -74,10 +77,12 @@ pnpm deploy
 # 安装依赖
 pnpm install
 
+# 执行数据库迁移
+pnpm wrangler d1 migrations apply DB
+
 # 启动开发服务器
 pnpm dev
-
-# 浏览器访问 http://localhost:5173
+pnpm preview
 ```
 
 ## 🎨 界面预览

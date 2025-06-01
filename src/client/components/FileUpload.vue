@@ -1,61 +1,63 @@
 <template>
-  <section class="mb-12">
+  <section class="mb-6 sm:mb-12">
     <div
-      class="bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-600 rounded-3xl p-8 transform hover:scale-[1.01] transition-all duration-200 shadow-[4px_4px_0px_0px_rgba(6,182,212,0.12)]">
-      <div class="text-2xl font-bold text-slate-800 dark:text-slate-100 mb-6 relative inline-block">
+      class="bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-600 rounded-2xl sm:rounded-3xl p-4 sm:p-8 transform hover:scale-[1.01] transition-all duration-200 shadow-[4px_4px_0px_0px_rgba(6,182,212,0.12)]">
+      <div class="text-xl sm:text-2xl font-bold text-slate-800 dark:text-slate-100 mb-4 sm:mb-6 relative inline-block">
         <div
           class="absolute bottom-2 left-0 right-0 h-2 bg-cyan-300 dark:bg-cyan-400/60 opacity-60 transform -rotate-1">
         </div>
-        <h2 class="text-2xl font-bold text-slate-800 dark:text-slate-100 mb-2 relative">{{ t('upload.title') }}
+        <h2 class="text-xl sm:text-2xl font-bold text-slate-800 dark:text-slate-100 mb-2 relative">{{ t('upload.title')
+        }}
         </h2>
       </div>
 
       <!-- 上传拖拽区域 -->
-      <div v-if="!isUploading" class="mb-6">
+      <div v-if="!isUploading" class="mb-4 sm:mb-6">
         <label class="block cursor-pointer group">
           <input ref="fileInput" type="file" @change="handleFileChange" multiple accept="*/*" class="sr-only" />
           <div
-            class="border-3 border-dashed border-cyan-200 dark:border-cyan-400/50 bg-cyan-50 dark:bg-cyan-900/20 rounded-2xl p-12 text-center transition-all duration-200 group-hover:border-cyan-300 dark:group-hover:border-cyan-400/70 group-hover:bg-cyan-100 dark:group-hover:bg-cyan-900/30 group-hover:scale-[1.02]">
+            class="border-3 border-dashed border-cyan-200 dark:border-cyan-400/50 bg-cyan-50 dark:bg-cyan-900/20 rounded-2xl p-6 sm:p-12 text-center transition-all duration-200 group-hover:border-cyan-300 dark:group-hover:border-cyan-400/70 group-hover:bg-cyan-100 dark:group-hover:bg-cyan-900/30 group-hover:scale-[1.02]">
             <div
-              class="inline-flex items-center justify-center w-16 h-16 bg-cyan-200 dark:bg-cyan-600/50 rounded-2xl mb-4 transform group-hover:rotate-6 group-hover:scale-110 transition-all duration-200">
-              <Upload class="w-8 h-8 text-cyan-700 dark:text-cyan-300" />
+              class="inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 bg-cyan-200 dark:bg-cyan-600/50 rounded-2xl mb-3 sm:mb-4 transform group-hover:rotate-6 group-hover:scale-110 transition-all duration-200">
+              <Upload class="w-6 h-6 sm:w-8 sm:h-8 text-cyan-700 dark:text-cyan-300" />
             </div>
             <p
-              class="text-lg font-semibold text-slate-800 dark:text-slate-200 mb-2 group-hover:text-cyan-800 dark:group-hover:text-cyan-300 transition-colors duration-200">
+              class="text-base sm:text-lg font-semibold text-slate-800 dark:text-slate-200 mb-2 group-hover:text-cyan-800 dark:group-hover:text-cyan-300 transition-colors duration-200">
               {{ selectedFiles.length > 0 ? t('upload.addMoreFiles') : t('upload.dropzone') }}</p>
-            <p class="text-slate-600 dark:text-slate-400">{{ t('upload.dropzoneSubtitle') }}</p>
+            <p class="text-sm sm:text-base text-slate-600 dark:text-slate-400">{{ t('upload.dropzoneSubtitle') }}</p>
           </div>
         </label>
       </div>
 
       <!-- 选中的文件列表 -->
-      <div v-if="selectedFiles.length > 0" class="space-y-4 mb-6">
+      <div v-if="selectedFiles.length > 0" class="space-y-3 sm:space-y-4 mb-4 sm:mb-6">
         <div v-for="(file, index) in selectedFiles" :key="`${file.name}-${file.lastModified}-${index}`"
-          class="bg-slate-50 dark:bg-slate-700 border-2 border-slate-200 dark:border-slate-600 rounded-2xl p-6 shadow-[2px_2px_0px_0px_rgba(148,163,184,0.15)]">
+          class="bg-slate-50 dark:bg-slate-700 border-2 border-slate-200 dark:border-slate-600 rounded-2xl p-4 sm:p-6 shadow-[2px_2px_0px_0px_rgba(148,163,184,0.15)]">
           <div class="flex items-center justify-between mb-3">
-            <div class="flex items-center gap-4">
+            <div class="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
               <div
-                class="w-12 h-12 bg-rose-200 dark:bg-rose-600/50 rounded-xl flex items-center justify-center transform -rotate-2 hover:rotate-0 transition-transform duration-200">
+                class="w-10 h-10 sm:w-12 sm:h-12 bg-rose-200 dark:bg-rose-600/50 rounded-xl flex items-center justify-center transform -rotate-2 hover:rotate-0 transition-transform duration-200 flex-shrink-0">
                 <component :is="getFileIcon(index)" :class="{ 'animate-spin': isUploading }"
-                  class="w-6 h-6 text-rose-700 dark:text-rose-300" />
+                  class="w-5 h-5 sm:w-6 sm:h-6 text-rose-700 dark:text-rose-300" />
               </div>
-              <div>
-                <p class="font-semibold text-slate-800 dark:text-slate-200">{{ file.name }}</p>
-                <p class="text-slate-600 dark:text-slate-400 text-sm">{{ formatFileSize(file.size) }}
+              <div class="min-w-0 flex-1">
+                <p class="font-semibold text-slate-800 dark:text-slate-200 text-sm sm:text-base truncate">{{ file.name
+                }}</p>
+                <p class="text-slate-600 dark:text-slate-400 text-xs sm:text-sm">{{ formatFileSize(file.size) }}
                 </p>
               </div>
             </div>
             <button v-if="!isUploading" @click="removeFile(index)" :title="t('upload.remove')"
-              class="w-8 h-8 bg-red-200 dark:bg-red-600/50 hover:bg-red-300 dark:hover:bg-red-500 text-red-700 dark:text-red-300 rounded-lg border-2 border-red-300 dark:border-red-500 transition-all duration-150 flex items-center justify-center hover:scale-110 active:scale-95 cursor-pointer">
+              class="w-8 h-8 bg-red-200 dark:bg-red-600/50 hover:bg-red-300 dark:hover:bg-red-500 text-red-700 dark:text-red-300 rounded-lg border-2 border-red-300 dark:border-red-500 transition-all duration-150 flex items-center justify-center hover:scale-110 active:scale-95 cursor-pointer flex-shrink-0 ml-2">
               <X class="w-4 h-4" />
             </button>
           </div>
 
           <!-- 文件上传进度条 -->
           <div v-if="isUploading && fileProgresses[index] !== undefined" class="space-y-2">
-            <div class="flex items-center justify-between text-sm">
-              <span class="text-slate-600 dark:text-slate-400">{{ getUploadStatusText(index) }}</span>
-              <span class="font-semibold text-slate-700 dark:text-slate-300">{{
+            <div class="flex items-center justify-between text-xs sm:text-sm">
+              <span class="text-slate-600 dark:text-slate-400 truncate">{{ getUploadStatusText(index) }}</span>
+              <span class="font-semibold text-slate-700 dark:text-slate-300 ml-2">{{
                 Math.round(fileProgresses[index]) }}%</span>
             </div>
             <div class="w-full bg-slate-200 dark:bg-slate-600 rounded-full h-2 overflow-hidden">
@@ -67,22 +69,23 @@
         </div>
 
         <!-- 总体上传进度 -->
-        <div v-if="isUploading" class="mb-6">
-          <div class="bg-slate-100 dark:bg-slate-600 border-2 border-slate-200 dark:border-slate-500 rounded-2xl p-6">
-            <div class="space-y-4">
-              <div class="flex items-center justify-between">
+        <div v-if="isUploading" class="mb-4 sm:mb-6">
+          <div
+            class="bg-slate-100 dark:bg-slate-600 border-2 border-slate-200 dark:border-slate-500 rounded-2xl p-4 sm:p-6">
+            <div class="space-y-3 sm:space-y-4">
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-0">
                 <div>
-                  <h3 class="font-semibold text-slate-800 dark:text-slate-200">{{
+                  <h3 class="font-semibold text-slate-800 dark:text-slate-200 text-sm sm:text-base">{{
                     t('upload.uploadProgress') }}</h3>
-                  <p class="text-sm text-slate-600 dark:text-slate-400">
+                  <p class="text-xs sm:text-sm text-slate-600 dark:text-slate-400 truncate">
                     {{ t('upload.currentFile') }}: {{ currentUploadingFile }}
                   </p>
                 </div>
-                <div class="text-right">
-                  <div class="text-2xl font-bold text-slate-800 dark:text-slate-200">
+                <div class="text-left sm:text-right">
+                  <div class="text-xl sm:text-2xl font-bold text-slate-800 dark:text-slate-200">
                     {{ Math.round(overallProgress) }}%
                   </div>
-                  <div class="text-sm text-slate-600 dark:text-slate-400">
+                  <div class="text-xs sm:text-sm text-slate-600 dark:text-slate-400">
                     {{ completedFiles }} / {{ selectedFiles.length }} {{ t('fileList.files') }}
                   </div>
                 </div>
@@ -98,21 +101,21 @@
         </div>
 
         <!-- 操作按钮 -->
-        <div class="flex justify-between items-center">
+        <div class="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 sm:gap-0">
           <button v-if="!isUploading" @click="clearAllFiles"
-            class="bg-slate-200 dark:bg-slate-600 hover:bg-slate-300 dark:hover:bg-slate-500 text-slate-700 dark:text-slate-200 font-medium px-4 py-3 rounded-2xl border-2 border-slate-300 dark:border-slate-600 transition-all duration-150 flex items-center gap-2 hover:scale-105 active:scale-95 cursor-pointer shadow-[2px_2px_0px_0px_rgba(148,163,184,0.2)]">
+            class="bg-slate-200 dark:bg-slate-600 hover:bg-slate-300 dark:hover:bg-slate-500 text-slate-700 dark:text-slate-200 font-medium px-4 py-3 rounded-2xl border-2 border-slate-300 dark:border-slate-600 transition-all duration-150 flex items-center justify-center gap-2 hover:scale-105 active:scale-95 cursor-pointer shadow-[2px_2px_0px_0px_rgba(148,163,184,0.2)] w-full sm:w-auto">
             <X class="w-4 h-4" />
             {{ t('upload.clearAll') }}
           </button>
-          <div v-else></div>
+          <div v-else class="hidden sm:block"></div>
 
           <button @click="uploadFiles" :disabled="isUploading"
-            class="bg-cyan-300 dark:bg-cyan-600 hover:bg-cyan-400 dark:hover:bg-cyan-500 disabled:bg-slate-300 dark:disabled:bg-slate-600 text-slate-800 dark:text-slate-100 font-semibold px-8 py-3 rounded-2xl border-2 border-cyan-400 dark:border-cyan-500 disabled:border-slate-400 dark:disabled:border-slate-600 transition-all duration-150 flex items-center gap-2 hover:scale-105 active:scale-95 disabled:hover:scale-100 cursor-pointer shadow-[3px_3px_0px_0px_rgba(6,182,212,0.2)]">
+            class="bg-cyan-300 dark:bg-cyan-600 hover:bg-cyan-400 dark:hover:bg-cyan-500 disabled:bg-slate-300 dark:disabled:bg-slate-600 text-slate-800 dark:text-slate-100 font-semibold px-6 sm:px-8 py-3 rounded-2xl border-2 border-cyan-400 dark:border-cyan-500 disabled:border-slate-400 dark:disabled:border-slate-600 transition-all duration-150 flex items-center justify-center gap-2 hover:scale-105 active:scale-95 disabled:hover:scale-100 cursor-pointer shadow-[3px_3px_0px_0px_rgba(6,182,212,0.2)] w-full sm:w-auto">
             <component :is="isUploading ? LoaderCircle : Upload"
               :class="{ 'animate-spin': isUploading, 'animate-bounce': !isUploading }" class="w-5 h-5" />
-            {{ isUploading ? t('upload.uploading') : t('upload.uploadButton', {
+            <span class="truncate">{{ isUploading ? t('upload.uploading') : t('upload.uploadButton', {
               count: selectedFiles.length
-            }) }}
+            }) }}</span>
           </button>
         </div>
       </div>
@@ -120,24 +123,26 @@
       <!-- 上传结果 -->
       <div v-if="uploadResults.length > 0" class="space-y-3">
         <div v-for="(result, index) in uploadResults" :key="index"
-          class="rounded-2xl p-4 border-2 shadow-[2px_2px_0px_0px_rgba(148,163,184,0.1)]"
+          class="rounded-2xl p-3 sm:p-4 border-2 shadow-[2px_2px_0px_0px_rgba(148,163,184,0.1)]"
           :class="'error' in result ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-600/50' : 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-600/50'">
-          <div v-if="!('error' in result) && 'url' in result" class="flex items-center gap-3">
-            <div class="w-6 h-6 bg-green-200 dark:bg-green-600/50 rounded-full flex items-center justify-center">
-              <CheckCircle class="w-4 h-4 text-green-700 dark:text-green-300" />
+          <div v-if="!('error' in result) && 'url' in result" class="flex items-start gap-3">
+            <div
+              class="w-5 h-5 sm:w-6 sm:h-6 bg-green-200 dark:bg-green-600/50 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+              <CheckCircle class="w-3 h-3 sm:w-4 sm:h-4 text-green-700 dark:text-green-300" />
             </div>
-            <p class="font-medium text-green-800 dark:text-green-200 text-sm">{{ `${t('upload.success')} -
+            <p class="font-medium text-green-800 dark:text-green-200 text-xs sm:text-sm">{{ `${t('upload.success')} -
               ${result.message}` }}</p>
           </div>
-          <div v-else class="flex items-center gap-3">
-            <div class="w-6 h-6 bg-red-200 dark:bg-red-600/50 rounded-full flex items-center justify-center">
-              <XCircle class="w-4 h-4 text-red-700 dark:text-red-300" />
+          <div v-else class="flex items-start gap-3">
+            <div
+              class="w-5 h-5 sm:w-6 sm:h-6 bg-red-200 dark:bg-red-600/50 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+              <XCircle class="w-3 h-3 sm:w-4 sm:h-4 text-red-700 dark:text-red-300" />
             </div>
-            <div>
-              <p class="font-medium text-red-800 dark:text-red-200 text-sm">{{ `${t('upload.error')} -
+            <div class="min-w-0">
+              <p class="font-medium text-red-800 dark:text-red-200 text-xs sm:text-sm">{{ `${t('upload.error')} -
                 ${result.error}` }}
               </p>
-              <p v-if="result.details" class="text-red-700 dark:text-red-300 text-xs">{{ result.details }}
+              <p v-if="result.details" class="text-red-700 dark:text-red-300 text-xs break-words">{{ result.details }}
               </p>
             </div>
           </div>

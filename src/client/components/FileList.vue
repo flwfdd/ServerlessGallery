@@ -1,7 +1,7 @@
 <template>
   <section>
     <div
-      class="bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-600 rounded-3xl overflow-hidden transform hover:scale-[1.01] transition-all duration-200 shadow-[4px_4px_0px_0px_rgba(6,182,212,0.12)]">
+      class="bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-600 rounded-2xl sm:rounded-3xl overflow-hidden transform hover:scale-[1.01] transition-all duration-200 shadow-[4px_4px_0px_0px_rgba(6,182,212,0.12)]">
 
       <!-- 标题栏 -->
       <div class="border-b-2 border-slate-200 dark:border-slate-600 p-8">
@@ -10,13 +10,13 @@
             <div
               class="absolute bottom-0 left-0 right-0 h-2 bg-cyan-300 dark:bg-cyan-400/60 opacity-60 transform -rotate-1">
             </div>
-            <h2 class="text-2xl font-bold text-slate-800 dark:text-slate-100 relative">{{
+            <h2 class="text-xl sm:text-2xl font-bold text-slate-800 dark:text-slate-100 relative">{{
               t('fileList.title') }}
             </h2>
           </div>
 
           <button @click="loadFiles" :disabled="isLoadingFiles"
-            class="bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 disabled:bg-slate-50 dark:disabled:bg-slate-800 text-slate-800 dark:text-slate-100 font-medium px-4 py-2 rounded-xl border-2 border-slate-200 dark:border-slate-600 disabled:border-slate-100 dark:disabled:border-slate-800 transition-all duration-150 flex items-center gap-2 hover:scale-105 active:scale-95 cursor-pointer shadow-[2px_2px_0px_0px_rgba(148,163,184,0.1)]">
+            class="bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 disabled:bg-slate-50 dark:disabled:bg-slate-800 text-slate-800 dark:text-slate-100 font-medium px-3 sm:px-4 py-2 rounded-xl border-2 border-slate-200 dark:border-slate-600 disabled:border-slate-100 dark:disabled:border-slate-800 transition-all duration-150 flex items-center gap-2 hover:scale-105 active:scale-95 cursor-pointer shadow-[2px_2px_0px_0px_rgba(148,163,184,0.1)] text-sm sm:text-base">
             <component :is="isLoadingFiles ? Loader2 : RotateCcw" :class="{ 'animate-spin': isLoadingFiles }"
               class="w-4 h-4" />
             {{ t('common.refresh') }}
@@ -24,29 +24,29 @@
         </div>
 
         <!-- 筛选区域 -->
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
           <!-- 搜索框 -->
-          <div>
-            <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3">{{
+          <div class="sm:col-span-2 lg:col-span-1">
+            <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2 sm:mb-3">{{
               t('fileList.search') }}</label>
             <div class="relative group focus-within:scale-[1.02] transition-all duration-150">
               <Search
                 class="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-slate-500 group-focus-within:text-cyan-500 dark:group-focus-within:text-cyan-400 transition-colors duration-200" />
               <input v-model="searchQuery" @input="debouncedSearch" type="text"
                 :placeholder="t('fileList.searchPlaceholder')"
-                class="w-full pl-10 pr-4 py-3 border-2 border-slate-200 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 placeholder-slate-500 dark:placeholder-slate-400 focus:border-cyan-300 dark:focus:border-cyan-500 focus:outline-none transition-all duration-150 hover:border-slate-300 dark:hover:border-slate-500 shadow-[1px_1px_0px_0px_rgba(148,163,184,0.1)]" />
+                class="w-full pl-10 pr-4 py-3 border-2 border-slate-200 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 placeholder-slate-500 dark:placeholder-slate-400 focus:border-cyan-300 dark:focus:border-cyan-500 focus:outline-none transition-all duration-150 hover:border-slate-300 dark:hover:border-slate-500 shadow-[1px_1px_0px_0px_rgba(148,163,184,0.1)] text-sm sm:text-base" />
             </div>
           </div>
 
           <!-- 文件类型筛选 -->
           <div>
-            <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3">{{
+            <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2 sm:mb-3">{{
               t('fileList.fileType') }}</label>
             <Listbox v-model="selectedMimeType" @update:modelValue="loadFiles">
               <div class="relative">
                 <ListboxButton
                   class="relative w-full cursor-pointer rounded-xl bg-white dark:bg-slate-700 py-3 pl-4 pr-10 text-left border-2 border-slate-200 dark:border-slate-600 focus:border-cyan-300 dark:focus:border-cyan-500 focus:outline-none transition-all duration-150 hover:border-slate-300 dark:hover:border-slate-500 focus:scale-[1.02] shadow-[1px_1px_0px_0px_rgba(148,163,184,0.1)]">
-                  <span class="block truncate text-slate-800 dark:text-slate-200">{{
+                  <span class="block truncate text-slate-800 dark:text-slate-200 text-sm sm:text-base">{{
                     fileTypeOptions.find(option => option.value === selectedMimeType)?.label ||
                     t('fileList.allTypes')}}</span>
                   <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
@@ -81,13 +81,13 @@
 
           <!-- 排序方式 -->
           <div>
-            <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3">{{
+            <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2 sm:mb-3">{{
               t('fileList.sortBy') }}</label>
             <Listbox v-model="sortBy" @update:modelValue="loadFiles">
               <div class="relative">
                 <ListboxButton
                   class="relative w-full cursor-pointer rounded-xl bg-white dark:bg-slate-700 py-3 pl-4 pr-10 text-left border-2 border-slate-200 dark:border-slate-600 focus:border-cyan-300 dark:focus:border-cyan-500 focus:outline-none transition-all duration-150 hover:border-slate-300 dark:hover:border-slate-500 focus:scale-[1.02] shadow-[1px_1px_0px_0px_rgba(148,163,184,0.1)]">
-                  <span class="block truncate text-slate-800 dark:text-slate-200">{{
+                  <span class="block truncate text-slate-800 dark:text-slate-200 text-sm sm:text-base">{{
                     sortByOptions.find(option => option.value === sortBy)?.label}}</span>
                   <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
                     <ChevronsUpDown class="h-4 w-4 text-slate-400" aria-hidden="true" />
@@ -121,13 +121,13 @@
 
           <!-- 排序顺序 -->
           <div>
-            <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3">{{
+            <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2 sm:mb-3">{{
               t('fileList.sortOrder') }}</label>
             <Listbox v-model="sortOrder" @update:modelValue="loadFiles">
               <div class="relative">
                 <ListboxButton
                   class="relative w-full cursor-pointer rounded-xl bg-white dark:bg-slate-700 py-3 pl-4 pr-10 text-left border-2 border-slate-200 dark:border-slate-600 focus:border-cyan-300 dark:focus:border-cyan-500 focus:outline-none transition-all duration-150 hover:border-slate-300 dark:hover:border-slate-500 focus:scale-[1.02] shadow-[1px_1px_0px_0px_rgba(148,163,184,0.1)]">
-                  <span class="block truncate text-slate-800 dark:text-slate-200">{{
+                  <span class="block truncate text-slate-800 dark:text-slate-200 text-sm sm:text-base">{{
                     sortOrderOptions.find(option => option.value === sortOrder)?.label}}</span>
                   <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
                     <ChevronsUpDown class="h-4 w-4 text-slate-400" aria-hidden="true" />
@@ -162,67 +162,72 @@
       </div>
 
       <!-- 文件列表 -->
-      <div class="p-8">
-        <div v-if="isLoadingFiles" class="text-center py-20">
+      <div class="p-4 sm:p-8">
+        <div v-if="isLoadingFiles" class="text-center py-12 sm:py-20">
           <div
-            class="inline-flex items-center justify-center w-16 h-16 bg-cyan-200 dark:bg-cyan-600/50 rounded-2xl mb-4 transform rotate-3">
-            <Loader2 class="w-8 h-8 animate-spin text-cyan-700 dark:text-cyan-300" />
+            class="inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 bg-cyan-200 dark:bg-cyan-600/50 rounded-2xl mb-4 transform rotate-3">
+            <Loader2 class="w-6 h-6 sm:w-8 sm:h-8 animate-spin text-cyan-700 dark:text-cyan-300" />
           </div>
-          <p class="text-lg font-medium text-slate-800 dark:text-slate-200">{{ t('common.loading') }}</p>
+          <p class="text-base sm:text-lg font-medium text-slate-800 dark:text-slate-200">{{ t('common.loading') }}</p>
         </div>
 
-        <div v-else-if="fileList.length === 0" class="text-center py-20">
+        <div v-else-if="fileList.length === 0" class="text-center py-12 sm:py-20">
           <div
-            class="inline-flex items-center justify-center w-20 h-20 bg-slate-200 dark:bg-slate-600 rounded-2xl mb-6 transform -rotate-3">
-            <FolderOpen class="w-10 h-10 text-slate-600 dark:text-slate-400" />
+            class="inline-flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 bg-slate-200 dark:bg-slate-600 rounded-2xl mb-4 sm:mb-6 transform -rotate-3">
+            <FolderOpen class="w-8 h-8 sm:w-10 sm:h-10 text-slate-600 dark:text-slate-400" />
           </div>
-          <p class="text-xl font-bold text-slate-800 dark:text-slate-200 mb-2">{{ searchQuery ?
+          <p class="text-lg sm:text-xl font-bold text-slate-800 dark:text-slate-200 mb-2">{{ searchQuery ?
             t('fileList.noResults') : t('fileList.noFiles') }}</p>
-          <p class="text-slate-600 dark:text-slate-400">{{ searchQuery ? t('fileList.noResultsDesc') :
+          <p class="text-sm sm:text-base text-slate-600 dark:text-slate-400">{{ searchQuery ?
+            t('fileList.noResultsDesc') :
             t('fileList.noFilesDesc') }}</p>
         </div>
 
-        <div v-else class="space-y-4">
+        <div v-else class="space-y-3 sm:space-y-4">
           <div v-for="(file, index) in fileList" :key="file.filename"
-            class="bg-slate-50 dark:bg-slate-700 border-2 border-slate-200 dark:border-slate-600 rounded-2xl p-6 hover:bg-slate-100 dark:hover:bg-slate-600 transition-all duration-150 hover:scale-[1.01] group shadow-[2px_2px_0px_0px_rgba(148,163,184,0.15)]">
-            <div class="flex items-center gap-6">
-              <!-- 文件预览 -->
-              <div class="flex-shrink-0">
-                <div class="relative">
-                  <img v-if="file.mime_type.startsWith('image/')" :src="`/files/${file.filename}?level=mid`"
-                    :alt="file.title || file.filename"
-                    class="w-16 h-16 object-cover rounded-xl border-2 border-slate-200 dark:border-slate-500 group-hover:-rotate-8 group-hover:scale-105 transition-transform duration-200" />
-                  <FileIcon v-else :mime-type="file.mime_type" :filename="file.filename" />
+            class="bg-slate-50 dark:bg-slate-700 border-2 border-slate-200 dark:border-slate-600 rounded-2xl p-4 sm:p-6 hover:bg-slate-100 dark:hover:bg-slate-600 transition-all duration-150 hover:scale-[1.01] group shadow-[2px_2px_0px_0px_rgba(148,163,184,0.15)]">
+            <div class="flex flex-col gap-3 sm:gap-0 sm:flex-row sm:items-center sm:gap-6">
+              <!-- 移动端：缩略图和信息在一行 -->
+              <div class="flex items-center gap-4 flex-1 min-w-0 sm:gap-6">
+                <!-- 文件预览 -->
+                <div class="flex-shrink-0">
+                  <div class="relative">
+                    <img v-if="file.mime_type.startsWith('image/')" :src="`/files/${file.filename}?level=mid`"
+                      :alt="file.title || file.filename"
+                      class="w-16 h-16 object-cover rounded-xl border-2 border-slate-200 dark:border-slate-500 group-hover:-rotate-8 group-hover:scale-105 transition-transform duration-200" />
+                    <FileIcon v-else :mime-type="file.mime_type" :filename="file.filename" />
+                  </div>
+                </div>
+
+                <!-- 文件信息 -->
+                <div class="flex-1 min-w-0 text-left">
+                  <h3
+                    class="font-bold text-slate-800 dark:text-slate-200 truncate text-base sm:text-lg group-hover:text-cyan-700 dark:group-hover:text-cyan-300 transition-colors duration-200">
+                    {{ file.title || file.filename }}
+                  </h3>
+                  <p class="text-slate-500 dark:text-slate-500 truncate text-xs sm:text-sm">
+                    {{ file.description || '&nbsp;' }}
+                  </p>
+                  <p class="text-slate-600 dark:text-slate-400 text-xs sm:text-sm">
+                    {{ formatFileSize(file.size) }} • {{ formatDate(file.uploaded_at) }}
+                  </p>
                 </div>
               </div>
 
-              <!-- 文件信息 -->
-              <div class="flex-1 min-w-0">
-                <h3
-                  class="font-bold text-slate-800 dark:text-slate-200 truncate text-lg group-hover:text-cyan-700 dark:group-hover:text-cyan-300 transition-colors duration-200">
-                  {{ file.title || file.filename }}
-                </h3>
-                <p class="text-slate-500 dark:text-slate-500 truncate text-sm">
-                  {{ file.description || '&nbsp;' }}
-                </p>
-                <p class="text-slate-600 dark:text-slate-400">
-                  {{ formatFileSize(file.size) }} • {{ formatDate(file.uploaded_at) }}
-                </p>
-              </div>
-
               <!-- 操作按钮 -->
-              <div class="flex items-center gap-2 opacity-60 group-hover:opacity-100 transition-opacity duration-200">
+              <div
+                class="flex flex-row items-center justify-center sm:justify-end gap-2 opacity-60 group-hover:opacity-100 transition-opacity duration-200 flex-shrink-0">
                 <button @click="$emit('openDetails', file)"
-                  class="w-10 h-10 bg-blue-200 dark:bg-blue-600/50 hover:bg-blue-300 dark:hover:bg-blue-500 text-blue-700 dark:text-blue-300 rounded-xl border-2 border-blue-300 dark:border-blue-500 transition-all duration-150 flex items-center justify-center hover:scale-110 active:scale-95 cursor-pointer hover:rotate-3 shadow-[1px_1px_0px_0px_rgba(59,130,246,0.2)]">
-                  <Eye class="w-5 h-5" />
+                  class="w-9 h-9 sm:w-10 sm:h-10 bg-blue-200 dark:bg-blue-600/50 hover:bg-blue-300 dark:hover:bg-blue-500 text-blue-700 dark:text-blue-300 rounded-lg sm:rounded-xl border-2 border-blue-300 dark:border-blue-500 transition-all duration-150 flex items-center justify-center hover:scale-110 active:scale-95 cursor-pointer hover:rotate-3 shadow-[1px_1px_0px_0px_rgba(59,130,246,0.2)]">
+                  <Eye class="w-4 h-4 sm:w-5 sm:h-5" />
                 </button>
                 <button @click="$emit('openEdit', file)"
-                  class="w-10 h-10 bg-amber-200 dark:bg-amber-600/50 hover:bg-amber-300 dark:hover:bg-amber-500 text-amber-700 dark:text-amber-300 rounded-xl border-2 border-amber-300 dark:border-amber-500 transition-all duration-150 flex items-center justify-center hover:scale-110 active:scale-95 cursor-pointer hover:-rotate-3 shadow-[1px_1px_0px_0px_rgba(245,158,11,0.2)]">
-                  <Edit class="w-5 h-5" />
+                  class="w-9 h-9 sm:w-10 sm:h-10 bg-amber-200 dark:bg-amber-600/50 hover:bg-amber-300 dark:hover:bg-amber-500 text-amber-700 dark:text-amber-300 rounded-lg sm:rounded-xl border-2 border-amber-300 dark:border-amber-500 transition-all duration-150 flex items-center justify-center hover:scale-110 active:scale-95 cursor-pointer hover:-rotate-3 shadow-[1px_1px_0px_0px_rgba(245,158,11,0.2)]">
+                  <Edit class="w-4 h-4 sm:w-5 sm:h-5" />
                 </button>
                 <button @click="$emit('confirmDelete', file.filename)"
-                  class="w-10 h-10 bg-red-200 dark:bg-red-600/50 hover:bg-red-300 dark:hover:bg-red-500 text-red-700 dark:text-red-300 rounded-xl border-2 border-red-300 dark:border-red-500 transition-all duration-150 flex items-center justify-center hover:scale-110 active:scale-95 cursor-pointer hover:rotate-3 shadow-[1px_1px_0px_0px_rgba(239,68,68,0.2)]">
-                  <Trash2 class="w-5 h-5" />
+                  class="w-9 h-9 sm:w-10 sm:h-10 bg-red-200 dark:bg-red-600/50 hover:bg-red-300 dark:hover:bg-red-500 text-red-700 dark:text-red-300 rounded-lg sm:rounded-xl border-2 border-red-300 dark:border-red-500 transition-all duration-150 flex items-center justify-center hover:scale-110 active:scale-95 cursor-pointer hover:rotate-3 shadow-[1px_1px_0px_0px_rgba(239,68,68,0.2)]">
+                  <Trash2 class="w-4 h-4 sm:w-5 sm:h-5" />
                 </button>
               </div>
             </div>
@@ -231,19 +236,19 @@
 
         <!-- 分页 -->
         <div v-if="fileList.length > 0"
-          class="mt-8 flex items-center justify-between pt-8 border-t-2 border-dashed border-slate-200 dark:border-slate-600">
-          <div class="text-slate-700 dark:text-slate-300 font-medium">
+          class="mt-6 sm:mt-8 flex flex-col sm:flex-row items-center justify-between gap-4 pt-6 sm:pt-8 border-t-2 border-dashed border-slate-200 dark:border-slate-600">
+          <div class="text-slate-700 dark:text-slate-300 font-medium text-sm sm:text-base text-center sm:text-left">
             {{ t('fileList.showing') }} {{ currentOffset + 1 }}-{{ Math.min(currentOffset + currentLimit,
               totalFiles || fileList.length) }}
             {{ totalFiles ? ` ${t('common.all')} ${totalFiles} ${t('fileList.files')}` : '' }}
           </div>
           <div class="flex gap-3">
             <button @click="previousPage" :disabled="currentOffset === 0"
-              class="px-4 py-2 bg-slate-200 dark:bg-slate-600 hover:bg-slate-300 dark:hover:bg-slate-500 disabled:bg-slate-100 dark:disabled:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold rounded-xl border-2 border-slate-300 dark:border-slate-600 disabled:border-slate-200 dark:disabled:border-slate-700 transition-all duration-150 hover:scale-105 active:scale-95 disabled:hover:scale-100 cursor-pointer disabled:cursor-not-allowed shadow-[2px_2px_0px_0px_rgba(148,163,184,0.2)]">
+              class="px-3 sm:px-4 py-2 bg-slate-200 dark:bg-slate-600 hover:bg-slate-300 dark:hover:bg-slate-500 disabled:bg-slate-100 dark:disabled:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold rounded-xl border-2 border-slate-300 dark:border-slate-600 disabled:border-slate-200 dark:disabled:border-slate-700 transition-all duration-150 hover:scale-105 active:scale-95 disabled:hover:scale-100 cursor-pointer disabled:cursor-not-allowed shadow-[2px_2px_0px_0px_rgba(148,163,184,0.2)] text-sm sm:text-base">
               {{ t('fileList.previous') }}
             </button>
             <button @click="nextPage" :disabled="fileList.length < currentLimit"
-              class="px-4 py-2 bg-slate-200 dark:bg-slate-600 hover:bg-slate-300 dark:hover:bg-slate-500 disabled:bg-slate-100 dark:disabled:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold rounded-xl border-2 border-slate-300 dark:border-slate-600 disabled:border-slate-200 dark:disabled:border-slate-700 transition-all duration-150 hover:scale-105 active:scale-95 disabled:hover:scale-100 cursor-pointer disabled:cursor-not-allowed shadow-[2px_2px_0px_0px_rgba(148,163,184,0.2)]">
+              class="px-3 sm:px-4 py-2 bg-slate-200 dark:bg-slate-600 hover:bg-slate-300 dark:hover:bg-slate-500 disabled:bg-slate-100 dark:disabled:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold rounded-xl border-2 border-slate-300 dark:border-slate-600 disabled:border-slate-200 dark:disabled:border-slate-700 transition-all duration-150 hover:scale-105 active:scale-95 disabled:hover:scale-100 cursor-pointer disabled:cursor-not-allowed shadow-[2px_2px_0px_0px_rgba(148,163,184,0.2)] text-sm sm:text-base">
               {{ t('fileList.next') }}
             </button>
           </div>

@@ -5,7 +5,7 @@
       style="background-image: radial-gradient(circle at 2px 2px, rgba(156,163,175,0.3) 2px, transparent 0); background-size: 20px 20px;">
     </div>
 
-    <div class="relative max-w-6xl mx-auto px-6 py-8">
+    <div class="relative max-w-6xl mx-auto px-3 sm:px-6 py-4 sm:py-8">
       <!-- 应用头部 -->
       <AppHeader :theme="theme" @setTheme="setTheme" />
 

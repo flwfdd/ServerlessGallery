@@ -15,14 +15,14 @@
   "r2_buckets": [
     {
       "binding": "BUCKET",
-      "bucket_name": "gallery"
+      "bucket_name": "zen-gallery"
     }
   ],
   "d1_databases": [
     {
       "binding": "DB",
-      "database_name": "gallery",
-      "database_id": "15c5f9e8-f586-4f73-828b-aa3ca95701f7"
+      "database_name": "zen-gallery",
+      "database_id": "525666a9-d245-46ba-a907-ccc85f213a8b"
     }
   ],
   "images": {

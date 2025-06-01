@@ -7,49 +7,49 @@
       </TransitionChild>
 
       <div class="fixed inset-0 z-10 overflow-y-auto">
-        <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+        <div class="flex min-h-full items-end justify-center p-2 sm:p-4 text-center sm:items-center">
           <TransitionChild as="template" enter="ease-out duration-200"
             enter-from="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
             enter-to="opacity-100 translate-y-0 sm:scale-100" leave="ease-in duration-150"
             leave-from="opacity-100 translate-y-0 sm:scale-100"
             leave-to="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95">
             <DialogPanel
-              class="relative transform overflow-hidden rounded-3xl bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-600 px-6 pb-6 pt-6 text-left sm:my-8 sm:w-full sm:max-w-lg sm:p-8 shadow-[6px_6px_0px_0px_rgba(245,158,11,0.15)]">
-              <div class="flex items-center justify-between mb-8">
+              class="relative transform overflow-hidden rounded-2xl sm:rounded-3xl bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-600 px-4 pb-4 pt-4 sm:px-6 sm:pb-6 sm:pt-6 text-left sm:my-8 w-full sm:max-w-lg lg:p-8 shadow-[6px_6px_0px_0px_rgba(245,158,11,0.15)]">
+              <div class="flex items-center justify-between mb-4 sm:mb-8">
                 <DialogTitle as="h3"
-                  class="text-2xl font-bold text-slate-800 dark:text-slate-100 relative inline-block">
+                  class="text-lg sm:text-2xl font-bold text-slate-800 dark:text-slate-100 relative inline-block">
                   {{ t('fileInfo.editTitle') }}
                   <div
                     class="absolute -bottom-1 left-0 right-0 h-1 bg-amber-300 dark:bg-amber-400/60 opacity-60 transform -rotate-0.5">
                   </div>
                 </DialogTitle>
                 <button @click="$emit('close')"
-                  class="w-10 h-10 bg-slate-200 dark:bg-slate-600 hover:bg-slate-300 dark:hover:bg-slate-500 text-slate-600 dark:text-slate-300 rounded-xl border-2 border-slate-300 dark:border-slate-600 transition-all duration-150 flex items-center justify-center hover:scale-110 active:scale-95 hover:rotate-90 cursor-pointer">
-                  <X class="w-6 h-6" />
+                  class="w-8 h-8 sm:w-10 sm:h-10 bg-slate-200 dark:bg-slate-600 hover:bg-slate-300 dark:hover:bg-slate-500 text-slate-600 dark:text-slate-300 rounded-lg sm:rounded-xl border-2 border-slate-300 dark:border-slate-600 transition-all duration-150 flex items-center justify-center hover:scale-110 active:scale-95 hover:rotate-90 cursor-pointer">
+                  <X class="w-5 h-5 sm:w-6 sm:h-6" />
                 </button>
               </div>
 
-              <form @submit.prevent="saveFileInfo" class="space-y-6">
-                <div class="space-y-3">
+              <form @submit.prevent="saveFileInfo" class="space-y-4 sm:space-y-6">
+                <div class="space-y-2 sm:space-y-3">
                   <label class="block text-sm font-bold text-slate-800 dark:text-slate-200">{{
                     t('fileInfo.title')
-                  }}</label>
+                    }}</label>
                   <input v-model="editForm.title" type="text" :placeholder="t('fileInfo.titlePlaceholder')"
-                    class="w-full rounded-xl border-2 border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 px-4 py-3 text-slate-800 dark:text-slate-200 placeholder-slate-500 dark:placeholder-slate-400 focus:border-cyan-300 dark:focus:border-cyan-500 focus:outline-none transition-all duration-150 hover:border-slate-300 dark:hover:border-slate-500 focus:scale-[1.02]" />
+                    class="w-full rounded-lg sm:rounded-xl border-2 border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base text-slate-800 dark:text-slate-200 placeholder-slate-500 dark:placeholder-slate-400 focus:border-cyan-300 dark:focus:border-cyan-500 focus:outline-none transition-all duration-150 hover:border-slate-300 dark:hover:border-slate-500 focus:scale-[1.02]" />
                 </div>
-                <div class="space-y-3">
+                <div class="space-y-2 sm:space-y-3">
                   <label class="block text-sm font-bold text-slate-800 dark:text-slate-200">{{
                     t('fileInfo.description') }}</label>
                   <textarea v-model="editForm.description" rows="4" :placeholder="t('fileInfo.descriptionPlaceholder')"
-                    class="w-full rounded-xl border-2 border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 px-4 py-3 text-slate-800 dark:text-slate-200 placeholder-slate-500 dark:placeholder-slate-400 focus:border-cyan-300 dark:focus:border-cyan-500 focus:outline-none resize-none transition-all duration-150 hover:border-slate-300 dark:hover:border-slate-500 focus:scale-[1.02]"></textarea>
+                    class="w-full rounded-lg sm:rounded-xl border-2 border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base text-slate-800 dark:text-slate-200 placeholder-slate-500 dark:placeholder-slate-400 focus:border-cyan-300 dark:focus:border-cyan-500 focus:outline-none resize-none transition-all duration-150 hover:border-slate-300 dark:hover:border-slate-500 focus:scale-[1.02]"></textarea>
                 </div>
-                <div class="flex gap-3 pt-4">
+                <div class="flex flex-col sm:flex-row gap-3 pt-2 sm:pt-4">
                   <button type="button" @click="$emit('close')"
-                    class="flex-1 px-4 py-3 bg-slate-200 dark:bg-slate-600 hover:bg-slate-300 dark:hover:bg-slate-500 text-slate-700 dark:text-slate-200 font-semibold rounded-xl border-2 border-slate-300 dark:border-slate-600 transition-all duration-150 hover:scale-105 active:scale-95 cursor-pointer shadow-[2px_2px_0px_0px_rgba(148,163,184,0.2)]">
+                    class="w-full sm:flex-1 px-4 py-3 bg-slate-200 dark:bg-slate-600 hover:bg-slate-300 dark:hover:bg-slate-500 text-slate-700 dark:text-slate-200 font-semibold rounded-lg sm:rounded-xl border-2 border-slate-300 dark:border-slate-600 transition-all duration-150 hover:scale-105 active:scale-95 cursor-pointer shadow-[2px_2px_0px_0px_rgba(148,163,184,0.2)] text-sm sm:text-base">
                     {{ t('common.cancel') }}
                   </button>
                   <button type="submit" :disabled="isSaving"
-                    class="flex-1 px-4 py-3 bg-amber-300 dark:bg-amber-600 hover:bg-amber-400 dark:hover:bg-amber-500 disabled:bg-slate-300 dark:disabled:bg-slate-600 text-amber-800 dark:text-amber-100 font-semibold rounded-xl border-2 border-amber-400 dark:border-amber-500 disabled:border-slate-400 dark:disabled:border-slate-600 transition-all duration-150 flex items-center justify-center gap-2 hover:scale-105 active:scale-95 disabled:hover:scale-100 cursor-pointer shadow-[3px_3px_0px_0px_rgba(245,158,11,0.2)]">
+                    class="w-full sm:flex-1 px-4 py-3 bg-amber-300 dark:bg-amber-600 hover:bg-amber-400 dark:hover:bg-amber-500 disabled:bg-slate-300 dark:disabled:bg-slate-600 text-amber-800 dark:text-amber-100 font-semibold rounded-lg sm:rounded-xl border-2 border-amber-400 dark:border-amber-500 disabled:border-slate-400 dark:disabled:border-slate-600 transition-all duration-150 flex items-center justify-center gap-2 hover:scale-105 active:scale-95 disabled:hover:scale-100 cursor-pointer shadow-[3px_3px_0px_0px_rgba(245,158,11,0.2)] text-sm sm:text-base">
                     <component :is="isSaving ? Loader2 : Save" :class="{ 'animate-spin': isSaving }" class="w-4 h-4" />
                     {{ isSaving ? t('common.loading') : t('common.save') }}
                   </button>

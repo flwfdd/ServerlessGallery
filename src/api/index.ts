@@ -271,17 +271,22 @@ const route = app
 
       // Delete from R2 storage
       await storageService.delete(filename);
+
       // Delete from cache
       const cacheStorage = new CloudflareR2Service(c.env.BUCKET as R2Bucket, 'cache');
-      for (const level of Object.values(ImageCompressionLevelSchema.enum)) {
-        cacheStorage.head(`${level}/${filename}`).then(cacheObject => {
+      const cacheDeletePromises = Object.values(ImageCompressionLevelSchema.enum).map(async (level) => {
+        try {
+          // Check if cache file exists
+          const cacheObject = await cacheStorage.head(`${level}/${filename}`);
           if (cacheObject) {
-            cacheStorage.delete(`${level}/${filename}`).catch((error: any) => {
-              console.error(`Error deleting cache for file ${filename} at level ${level}:`, error);
-            });
+            await cacheStorage.delete(`${level}/${filename}`);
+            console.log(`Successfully deleted cache for file ${filename} at level ${level}`);
           }
-        });
-      }
+        } catch (error: any) {
+          console.error(`Error deleting cache for file ${filename} at level ${level}:`, error);
+        }
+      });
+      await Promise.allSettled(cacheDeletePromises);
 
       // Delete from D1 database
       await dbService.deleteFile(filename);

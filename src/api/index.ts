@@ -388,12 +388,54 @@ async function streamR2Object(c: Context, storageService: StorageService, key: s
     if (object.metadata?.etag) {
       headers.set('ETag', object.metadata.etag);
     }
-    if (object.metadata?.contentLength !== undefined) {
-      headers.set('Content-Length', object.metadata.contentLength.toString());
-    }
     if (cacheControl) {
       headers.set('Cache-Control', cacheControl);
     }
+
+    const contentLength = object.metadata?.contentLength;
+    if (contentLength === undefined) {
+      // If we don't know the content length, return the full object
+      return new Response(object.body as BodyInit, { headers });
+    }
+
+    // Check for Range header for partial content requests
+    const rangeHeader = c.req.header('Range');
+
+    if (rangeHeader) {
+      // Parse Range header (e.g., "bytes=0-1023" or "bytes=1024-")
+      const rangeMatch = rangeHeader.match(/bytes=(\d*)-(\d*)/);
+      if (rangeMatch) {
+        const start = rangeMatch[1] ? parseInt(rangeMatch[1], 10) : 0;
+        const end = rangeMatch[2] ? parseInt(rangeMatch[2], 10) : contentLength - 1;
+
+        // Validate range
+        if (start >= contentLength || end >= contentLength || start > end) {
+          headers.set('Content-Range', `bytes */${contentLength}`);
+          return new Response('Range Not Satisfiable', {
+            status: 416,
+            headers,
+          });
+        }
+
+        // Convert stream to array buffer for range extraction
+        const arrayBuffer = await streamToArrayBuffer(object.body as ReadableStream);
+        const chunk = arrayBuffer.slice(start, end + 1);
+
+        // Set partial content headers
+        headers.set('Content-Range', `bytes ${start}-${end}/${contentLength}`);
+        headers.set('Content-Length', chunk.byteLength.toString());
+        headers.set('Accept-Ranges', 'bytes');
+
+        return new Response(chunk, {
+          status: 206,
+          headers,
+        });
+      }
+    }
+
+    // For non-range requests or invalid ranges, return full content
+    headers.set('Content-Length', contentLength.toString());
+    headers.set('Accept-Ranges', 'bytes');
 
     return new Response(object.body as BodyInit, {
       headers,

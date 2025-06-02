@@ -44,7 +44,7 @@
                   <div class="space-y-2">
                     <label class="text-sm font-bold text-slate-800 dark:text-slate-200">{{
                       t('fileList.fileName')
-                    }}</label>
+                      }}</label>
                     <div>
                       <input readonly :value="file.filename"
                         class="w-full rounded-lg sm:rounded-xl border-2 border-slate-200 dark:border-slate-600 focus:outline-none focus:border-cyan-300 dark:focus:border-cyan-500 bg-slate-50 dark:bg-slate-700 px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-mono text-slate-800 dark:text-slate-200" />
@@ -53,7 +53,7 @@
                   <div class="space-y-2">
                     <label class="text-sm font-bold text-slate-800 dark:text-slate-200">{{
                       t('fileList.mimeType')
-                    }}</label>
+                      }}</label>
                     <div>
                       <input readonly :value="file.mime_type"
                         class="w-full rounded-lg sm:rounded-xl border-2 border-slate-200 dark:border-slate-600 focus:outline-none focus:border-cyan-300 dark:focus:border-cyan-500 bg-slate-50 dark:bg-slate-700 px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-mono text-slate-800 dark:text-slate-200" />
@@ -62,7 +62,7 @@
                   <div class="space-y-2">
                     <label class="text-sm font-bold text-slate-800 dark:text-slate-200">{{
                       t('fileList.size')
-                    }}</label>
+                      }}</label>
                     <p class="text-slate-700 dark:text-slate-300 px-3 sm:px-4 py-2 sm:py-3 text-sm">
                       {{ formatFileSize(file.size) }}
                     </p>
@@ -70,7 +70,7 @@
                   <div class="space-y-2">
                     <label class="text-sm font-bold text-slate-800 dark:text-slate-200">{{
                       t('fileList.uploadTime')
-                    }}</label>
+                      }}</label>
                     <p class="text-slate-700 dark:text-slate-300 px-3 sm:px-4 py-2 sm:py-3 text-sm">
                       {{ formatDate(file.uploaded_at) }}
                     </p>
@@ -78,7 +78,7 @@
                   <div v-if="file.title" class="lg:col-span-2 space-y-2">
                     <label class="text-sm font-bold text-slate-800 dark:text-slate-200">{{
                       t('fileInfo.title')
-                    }}</label>
+                      }}</label>
                     <p class="text-slate-700 dark:text-slate-300 px-3 sm:px-4 py-2 sm:py-3 text-sm">
                       {{ file.title }}
                     </p>
@@ -86,7 +86,7 @@
                   <div v-if="file.description" class="lg:col-span-2 space-y-2">
                     <label class="text-sm font-bold text-slate-800 dark:text-slate-200">{{
                       t('fileInfo.description')
-                    }}</label>
+                      }}</label>
                     <p class="text-slate-700 dark:text-slate-300 px-3 sm:px-4 py-2 sm:py-3 text-sm">
                       {{ file.description }}
                     </p>
@@ -114,7 +114,8 @@
                         <div class="flex gap-2 sm:gap-3">
                           <button @click="openInNewTab(`${currentOrigin}/files/${file.filename}`)"
                             class="flex-1 sm:flex-none bg-cyan-200 dark:bg-cyan-600 hover:bg-cyan-400 dark:hover:bg-cyan-500 text-cyan-800 dark:text-cyan-100 font-semibold px-3 sm:px-4 py-2 sm:py-3 rounded-lg sm:rounded-xl border-2 border-cyan-400 dark:border-cyan-500 transition-all duration-150 flex items-center justify-center gap-2 hover:scale-105 active:scale-95 cursor-pointer shadow-[2px_2px_0px_0px_rgba(6,182,212,0.2)] text-xs sm:text-sm">
-                            <Copy class="w-3 h-3 sm:w-4 sm:h-4 hover:rotate-12 transition-transform duration-200" />
+                            <ExternalLink
+                              class="w-3 h-3 sm:w-4 sm:h-4 hover:rotate-12 transition-transform duration-200" />
                             {{ t('fileList.open') }}
                           </button>
                           <button
@@ -163,7 +164,7 @@ import {
   TransitionChild,
   TransitionRoot
 } from '@headlessui/vue';
-import { Copy, Link, X } from 'lucide-vue-next';
+import { Copy, ExternalLink, Link, X } from 'lucide-vue-next';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import type { FileMetadata } from '../../common/services';

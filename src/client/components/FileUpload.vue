@@ -13,17 +13,27 @@
 
       <!-- 上传拖拽区域 -->
       <div v-if="!isUploading" class="mb-4 sm:mb-6">
-        <label class="block cursor-pointer group">
+        <label @click="fileInput?.click()" @dragover.prevent="handleDragOver" @dragleave.prevent="handleDragLeave"
+          @drop.prevent="handleFileDrop" class="block cursor-pointer group">
           <input ref="fileInput" type="file" @change="handleFileChange" multiple accept="*/*" class="sr-only" />
           <div
-            class="border-3 border-dashed border-cyan-200 dark:border-cyan-400/50 bg-cyan-50 dark:bg-cyan-900/20 rounded-2xl p-6 sm:p-12 text-center transition-all duration-200 group-hover:border-cyan-300 dark:group-hover:border-cyan-400/70 group-hover:bg-cyan-100 dark:group-hover:bg-cyan-900/30 group-hover:scale-[1.02]">
+            class="border-3 border-dashed transition-all duration-200 rounded-2xl p-6 sm:p-12 text-center group-hover:scale-[1.02]"
+            :class="isDragOver
+              ? 'border-cyan-400 dark:border-cyan-400 bg-cyan-100 dark:bg-cyan-900/40 scale-[1.02]'
+              : 'border-cyan-200 dark:border-cyan-400/50 bg-cyan-50 dark:bg-cyan-900/20 group-hover:border-cyan-300 dark:group-hover:border-cyan-400/70 group-hover:bg-cyan-100 dark:group-hover:bg-cyan-900/30'">
             <div
-              class="inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 bg-cyan-200 dark:bg-cyan-600/50 rounded-2xl mb-3 sm:mb-4 transform group-hover:rotate-6 group-hover:scale-110 transition-all duration-200">
+              class="inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 rounded-2xl mb-3 sm:mb-4 transform group-hover:rotate-6 group-hover:scale-110 transition-all duration-200"
+              :class="isDragOver
+                ? 'bg-cyan-300 dark:bg-cyan-600/70 rotate-6 scale-110'
+                : 'bg-cyan-200 dark:bg-cyan-600/50'">
               <Upload class="w-6 h-6 sm:w-8 sm:h-8 text-cyan-700 dark:text-cyan-300" />
             </div>
-            <p
-              class="text-base sm:text-lg font-semibold text-slate-800 dark:text-slate-200 mb-2 group-hover:text-cyan-800 dark:group-hover:text-cyan-300 transition-colors duration-200">
-              {{ selectedFiles.length > 0 ? t('upload.addMoreFiles') : t('upload.dropzone') }}</p>
+            <p class="text-base sm:text-lg font-semibold mb-2 transition-colors duration-200" :class="isDragOver
+              ? 'text-cyan-800 dark:text-cyan-200'
+              : 'text-slate-800 dark:text-slate-200 group-hover:text-cyan-800 dark:group-hover:text-cyan-300'">
+              {{ isDragOver
+                ? t('upload.dropFiles')
+                : (selectedFiles.length > 0 ? t('upload.addMoreFiles') : t('upload.dropzone')) }}</p>
             <p class="text-sm sm:text-base text-slate-600 dark:text-slate-400">{{ t('upload.dropzoneSubtitle') }}</p>
           </div>
         </label>
@@ -424,5 +434,67 @@ const formatFileSize = (bytes: number): string => {
   const sizes = ['B', 'KB', 'MB', 'GB'];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+};
+
+// 拖拽相关状态
+const isDragOver = ref(false);
+
+const handleDragOver = () => {
+  isDragOver.value = true;
+};
+
+const handleDragLeave = () => {
+  isDragOver.value = false;
+};
+
+const handleFileDrop = (event: DragEvent) => {
+  event.preventDefault();
+  isDragOver.value = false;
+
+  const dataTransfer = event.dataTransfer;
+  if (dataTransfer && dataTransfer.files && dataTransfer.files.length > 0) {
+    const newFiles = Array.from(dataTransfer.files);
+
+    // 如果已有文件，则添加新文件；否则直接替换
+    if (selectedFiles.value.length > 0) {
+      // 检查重复文件（基于文件名和大小）
+      const existingFileKeys = new Set(
+        selectedFiles.value.map(f => `${f.name}-${f.size}-${f.lastModified}`)
+      );
+
+      const uniqueNewFiles = newFiles.filter(f =>
+        !existingFileKeys.has(`${f.name}-${f.size}-${f.lastModified}`)
+      );
+
+      const duplicateCount = newFiles.length - uniqueNewFiles.length;
+
+      if (uniqueNewFiles.length > 0) {
+        selectedFiles.value = [...selectedFiles.value, ...uniqueNewFiles];
+        uploadResults.value = [];
+
+        // 显示添加成功的提示
+        if (duplicateCount > 0) {
+          emit('showToast', t('upload.addedFilesWithDuplicates', {
+            added: uniqueNewFiles.length,
+            duplicates: duplicateCount
+          }));
+        } else {
+          emit('showToast', t('upload.addedFiles', { count: uniqueNewFiles.length }));
+        }
+      } else if (duplicateCount > 0) {
+        // 全部都是重复文件
+        emit('showToast', t('upload.allDuplicateFiles'));
+      }
+    } else {
+      selectedFiles.value = newFiles;
+      uploadResults.value = [];
+      // 重置进度状态
+      fileProgresses.value = {};
+      fileStatuses.value = {};
+      completedFiles.value = 0;
+
+      emit('showToast', t('upload.addedFiles', { count: newFiles.length }));
+    }
+  }
 };
 </script>

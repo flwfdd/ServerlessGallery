@@ -25,6 +25,7 @@
     "upload": {
         "title": "上传文件",
         "dropzone": "点击选择文件或拖拽到此处",
+        "dropFiles": "释放文件开始上传",
         "addMoreFiles": "点击添加更多文件",
         "dropzoneSubtitle": "支持多文件选择",
         "startUpload": "开始上传",

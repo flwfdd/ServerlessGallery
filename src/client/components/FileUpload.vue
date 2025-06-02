@@ -7,7 +7,7 @@
           class="absolute bottom-2 left-0 right-0 h-2 bg-cyan-300 dark:bg-cyan-400/60 opacity-60 transform -rotate-1">
         </div>
         <h2 class="text-xl sm:text-2xl font-bold text-slate-800 dark:text-slate-100 mb-2 relative">{{ t('upload.title')
-          }}
+        }}
         </h2>
       </div>
 
@@ -52,7 +52,7 @@
               </div>
               <div class="min-w-0 flex-1">
                 <p class="font-semibold text-slate-800 dark:text-slate-200 text-sm sm:text-base truncate">{{ file.name
-                  }}</p>
+                }}</p>
                 <p class="text-slate-600 dark:text-slate-400 text-xs sm:text-sm">{{ formatFileSize(file.size) }}
                 </p>
               </div>
@@ -234,46 +234,7 @@ const handleFileChange = (event: Event) => {
   const target = event.target as HTMLInputElement;
   if (target.files && target.files.length > 0) {
     const newFiles = Array.from(target.files);
-
-    // 如果已有文件，则添加新文件；否则直接替换
-    if (selectedFiles.value.length > 0) {
-      // 检查重复文件（基于文件名和大小）
-      const existingFileKeys = new Set(
-        selectedFiles.value.map(f => `${f.name}-${f.size}-${f.lastModified}`)
-      );
-
-      const uniqueNewFiles = newFiles.filter(f =>
-        !existingFileKeys.has(`${f.name}-${f.size}-${f.lastModified}`)
-      );
-
-      const duplicateCount = newFiles.length - uniqueNewFiles.length;
-
-      if (uniqueNewFiles.length > 0) {
-        selectedFiles.value = [...selectedFiles.value, ...uniqueNewFiles];
-        // 只清理上传结果，不重置已有文件的进度
-        uploadResults.value = [];
-
-        // 显示添加成功的提示
-        if (duplicateCount > 0) {
-          emit('showToast', t('upload.addedFilesWithDuplicates', {
-            added: uniqueNewFiles.length,
-            duplicates: duplicateCount
-          }));
-        } else {
-          emit('showToast', t('upload.addedFiles', { count: uniqueNewFiles.length }));
-        }
-      } else if (duplicateCount > 0) {
-        // 全部都是重复文件
-        emit('showToast', t('upload.allDuplicateFiles'));
-      }
-    } else {
-      selectedFiles.value = newFiles;
-      uploadResults.value = [];
-      // 重置进度状态
-      fileProgresses.value = {};
-      fileStatuses.value = {};
-      completedFiles.value = 0;
-    }
+    processNewFiles(newFiles);
   }
   // 清理input的value，确保可以重复选择相同文件
   if (fileInput.value) {
@@ -436,6 +397,79 @@ const formatFileSize = (bytes: number): string => {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 };
 
+// 文件大小限制 (100MB)
+const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB in bytes
+
+// 通用文件处理函数
+const processNewFiles = (newFiles: File[]) => {
+  // 过滤掉大于100MB的文件
+  const validFiles: File[] = [];
+  const oversizedFiles: File[] = [];
+
+  newFiles.forEach(file => {
+    if (file.size > MAX_FILE_SIZE) {
+      oversizedFiles.push(file);
+    } else {
+      validFiles.push(file);
+    }
+  });
+
+  // 显示过滤结果
+  if (oversizedFiles.length > 0) {
+    const oversizedNames = oversizedFiles.map(f => `${f.name} (${formatFileSize(f.size)})`).join(', ');
+    emit('showToast', t('upload.filesFilteredBySize', {
+      count: oversizedFiles.length,
+      files: oversizedNames,
+      maxSize: '100MB'
+    }));
+  }
+
+  if (validFiles.length === 0) {
+    return; // 没有有效文件，直接返回
+  }
+
+  // 如果已有文件，则添加新文件；否则直接替换
+  if (selectedFiles.value.length > 0) {
+    // 检查重复文件（基于文件名和大小）
+    const existingFileKeys = new Set(
+      selectedFiles.value.map(f => `${f.name}-${f.size}-${f.lastModified}`)
+    );
+
+    const uniqueNewFiles = validFiles.filter(f =>
+      !existingFileKeys.has(`${f.name}-${f.size}-${f.lastModified}`)
+    );
+
+    const duplicateCount = validFiles.length - uniqueNewFiles.length;
+
+    if (uniqueNewFiles.length > 0) {
+      selectedFiles.value = [...selectedFiles.value, ...uniqueNewFiles];
+      uploadResults.value = [];
+
+      // 显示添加成功的提示
+      if (duplicateCount > 0) {
+        emit('showToast', t('upload.addedFilesWithDuplicates', {
+          added: uniqueNewFiles.length,
+          duplicates: duplicateCount
+        }));
+      } else {
+        emit('showToast', t('upload.addedFiles', { count: uniqueNewFiles.length }));
+      }
+    } else if (duplicateCount > 0) {
+      // 全部都是重复文件
+      emit('showToast', t('upload.allDuplicateFiles'));
+    }
+  } else {
+    selectedFiles.value = validFiles;
+    uploadResults.value = [];
+    // 重置进度状态
+    fileProgresses.value = {};
+    fileStatuses.value = {};
+    completedFiles.value = 0;
+
+    emit('showToast', t('upload.addedFiles', { count: validFiles.length }));
+  }
+};
+
 // 拖拽相关状态
 const isDragOver = ref(false);
 
@@ -454,47 +488,7 @@ const handleFileDrop = (event: DragEvent) => {
   const dataTransfer = event.dataTransfer;
   if (dataTransfer && dataTransfer.files && dataTransfer.files.length > 0) {
     const newFiles = Array.from(dataTransfer.files);
-
-    // 如果已有文件，则添加新文件；否则直接替换
-    if (selectedFiles.value.length > 0) {
-      // 检查重复文件（基于文件名和大小）
-      const existingFileKeys = new Set(
-        selectedFiles.value.map(f => `${f.name}-${f.size}-${f.lastModified}`)
-      );
-
-      const uniqueNewFiles = newFiles.filter(f =>
-        !existingFileKeys.has(`${f.name}-${f.size}-${f.lastModified}`)
-      );
-
-      const duplicateCount = newFiles.length - uniqueNewFiles.length;
-
-      if (uniqueNewFiles.length > 0) {
-        selectedFiles.value = [...selectedFiles.value, ...uniqueNewFiles];
-        uploadResults.value = [];
-
-        // 显示添加成功的提示
-        if (duplicateCount > 0) {
-          emit('showToast', t('upload.addedFilesWithDuplicates', {
-            added: uniqueNewFiles.length,
-            duplicates: duplicateCount
-          }));
-        } else {
-          emit('showToast', t('upload.addedFiles', { count: uniqueNewFiles.length }));
-        }
-      } else if (duplicateCount > 0) {
-        // 全部都是重复文件
-        emit('showToast', t('upload.allDuplicateFiles'));
-      }
-    } else {
-      selectedFiles.value = newFiles;
-      uploadResults.value = [];
-      // 重置进度状态
-      fileProgresses.value = {};
-      fileStatuses.value = {};
-      completedFiles.value = 0;
-
-      emit('showToast', t('upload.addedFiles', { count: newFiles.length }));
-    }
+    processNewFiles(newFiles);
   }
 };
 </script>

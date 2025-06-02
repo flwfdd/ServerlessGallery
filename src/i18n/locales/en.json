@@ -41,6 +41,7 @@
         "addedFiles": "Added {count} files",
         "addedFilesWithDuplicates": "Added {added} files, skipped {duplicates} duplicates",
         "allDuplicateFiles": "All selected files already exist, automatically skipped",
+        "filesFilteredBySize": "Filtered {count} files exceeding {maxSize}: {files}",
         "clearAll": "Clear All"
     },
     "fileList": {

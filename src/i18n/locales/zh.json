@@ -41,6 +41,7 @@
         "addedFiles": "已添加 {count} 个文件",
         "addedFilesWithDuplicates": "已添加 {added} 个文件，跳过 {duplicates} 个重复文件",
         "allDuplicateFiles": "所选文件均已存在，已自动跳过",
+        "filesFilteredBySize": "已过滤 {count} 个超过 {maxSize} 的文件：{files}",
         "clearAll": "清空所有"
     },
     "fileList": {

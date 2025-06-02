@@ -38,6 +38,10 @@
                       class="max-w-full max-h-60 sm:max-h-80 object-contain" />
                   </div>
                 </div>
+                <div v-else-if="file.mime_type.startsWith('video/')" class="text-center">
+                  <video :src="`/files/${file.filename}`"
+                    class=" rounded-xl sm:rounded-2xlmax-w-full mx-auto max-h-60 sm:max-h-80 object-contain" controls />
+                </div>
 
                 <!-- 基本信息 -->
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">

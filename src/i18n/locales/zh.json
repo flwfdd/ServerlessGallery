@@ -27,7 +27,7 @@
         "dropzone": "点击选择文件或拖拽到此处",
         "dropFiles": "释放文件开始上传",
         "addMoreFiles": "点击添加更多文件",
-        "dropzoneSubtitle": "支持多文件选择",
+        "dropzoneSubtitle": "支持多文件选择，单个文件最大 100MB",
         "startUpload": "开始上传",
         "uploading": "上传中",
         "uploadProgress": "上传进度",

@@ -27,7 +27,7 @@
         "dropzone": "Click to select files or drag and drop here",
         "dropFiles": "Drop files to upload",
         "addMoreFiles": "Click to add more files",
-        "dropzoneSubtitle": "Supports multiple files",
+        "dropzoneSubtitle": "Supports multiple files, single file max 100MB",
         "startUpload": "Start Upload",
         "uploading": "Uploading",
         "uploadProgress": "Upload Progress",

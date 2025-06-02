@@ -2,6 +2,7 @@ import { cloudflare } from '@cloudflare/vite-plugin'
 import honoBuild from '@hono/vite-build/cloudflare-workers'
 import tailwindcss from '@tailwindcss/vite'
 import vue from '@vitejs/plugin-vue'
+import copy from 'rollup-plugin-copy'
 import { defineConfig } from 'vite'
 
 export default defineConfig(({ command, mode, isSsrBuild }) => {
@@ -13,7 +14,16 @@ export default defineConfig(({ command, mode, isSsrBuild }) => {
 
   if (mode === 'client') {
     return {
-      plugins: [tailwindcss(), vue()],
+      plugins: [
+        tailwindcss(),
+        vue(),
+        copy({
+          targets: [
+            { src: 'public/favicon.ico', dest: 'dist' }
+          ],
+          hook: 'writeBundle'
+        })
+      ],
       build: {
         rollupOptions: {
           input: {

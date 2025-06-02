@@ -9,13 +9,14 @@ import type { FileMetadata, ImageCompressionLevel, StorageService } from '../com
 import { ImageCompressionLevelSchema, ListFilesOptionsSchema } from '../common/services';
 import { CloudflareD1Service, CloudFlareImageService, CloudflareR2Service } from './services/cloudflare';
 
-const htmlShell = (clientScriptPath: string, stylePath: string) => `
+const htmlShell = (clientScriptPath: string, stylePath: string, faviconPath: string) => `
   <html>
     <head>
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <title>ZenGallery</title>
       <link href="${stylePath}" rel="stylesheet">
+      <link href="${faviconPath}" rel="icon">
     </head>
     <body>
       <div id="app"></div>
@@ -50,7 +51,8 @@ const route = app
   .get('/', (c) => {
     const clientScript = '/static/client.js';
     const styleSheet = '/static/assets/style.css';
-    return c.html(htmlShell(clientScript, styleSheet));
+    const favicon = '/favicon.ico';
+    return c.html(htmlShell(clientScript, styleSheet, favicon));
   })
   .get(
     '/api/files',

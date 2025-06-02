@@ -9,9 +9,6 @@ import type { FileMetadata, ImageCompressionLevel, StorageService } from '../com
 import { ImageCompressionLevelSchema, ListFilesOptionsSchema } from '../common/services';
 import { CloudflareD1Service, CloudFlareImageService, CloudflareR2Service } from './services/cloudflare';
 
-// 我们将假设 Wrangler 预览/部署总是在生产环境中，
-// 而 Vite 开发服务器会使用全新的 HTML 页面（不使用我们的 htmlShell）
-// 这样我们不需要在服务器端检测环境
 const htmlShell = (clientScriptPath: string, stylePath: string) => `
   <html>
     <head>
@@ -97,36 +94,62 @@ const route = app
       const storageService = new CloudflareR2Service(c.env.BUCKET as R2Bucket, 'files');
       const dbService = new CloudflareD1Service(c.env.DB as D1Database);
 
+      let tempKey: string | null = null;
+
       try {
         const { file } = c.req.valid('form');
-        const arrayBuffer = await file.arrayBuffer();
 
-        const digest = await crypto.subtle.digest('MD5', arrayBuffer);
-        const hashArray = Array.from(new Uint8Array(digest));
-        const md5Hash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
         const extension = file.name.split('.').pop() || '';
-        const filename = `${md5Hash}${extension ? `.${extension}` : ''}`;
 
-        // Check if file already exists in DB
-        let existingFileRecord = await dbService.getFile(filename);
+        // Upload to temporary location
+        tempKey = `temp_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+        const uploadResult = await storageService.put(tempKey, file, {
+          contentType: file.type
+        });
+
+        const etag = uploadResult.etag;
+        if (!etag) {
+          throw new Error('Upload failed: No ETag received from R2');
+        }
+        const finalFilename = `${etag}${extension ? `.${extension}` : ''}`;
+
+        // Check if file already exists in database
+        const existingFileRecord = await dbService.getFile(finalFilename);
 
         if (existingFileRecord) {
+          // File already exists, delete temporary file and return existing file information
+          await storageService.delete(tempKey);
+          tempKey = null; // Cleaned up
+
           return c.json({
-            message: `${file.name} already exists.`,
+            message: `File with identical content already exists: ${file.name}`,
             info: existingFileRecord,
             url: `/files/${existingFileRecord.filename}`,
           });
         }
 
-        // File does not exist, proceed with upload
-        await storageService.put(filename, arrayBuffer, { contentType: file.type });
+        // Move from temporary location to final location
+        const tempObject = await storageService.get(tempKey);
+        if (!tempObject?.body) {
+          throw new Error('Failed to retrieve uploaded temporary file');
+        }
 
+        // Upload to final location
+        await storageService.put(finalFilename, tempObject.body as ReadableStream, {
+          contentType: file.type
+        });
+
+        // Delete temporary file after successful upload
+        await storageService.delete(tempKey);
+        tempKey = null; // Cleaned up
+
+        // Save file metadata to database
         const metadata: FileMetadata = {
-          filename: filename,
+          filename: finalFilename,
           title: file.name,
           description: '',
           mime_type: file.type || 'application/octet-stream',
-          size: arrayBuffer.byteLength,
+          size: uploadResult.size || file.size,
           uploaded_at: new Date().toISOString(),
         };
         await dbService.saveFile(metadata);
@@ -134,12 +157,24 @@ const route = app
         return c.json({
           message: `${file.name} uploaded successfully!`,
           info: metadata,
-          url: `/files/${filename}`,
+          url: `/files/${finalFilename}`,
         });
 
       } catch (error: any) {
+        // Ensure temporary file is cleaned up
+        if (tempKey) {
+          try {
+            await storageService.delete(tempKey);
+          } catch (cleanupError) {
+            console.error('Failed to cleanup temporary file:', cleanupError);
+          }
+        }
+
         console.error('Upload error:', error, error.stack);
-        return c.json({ error: 'Failed to upload file', details: error.message }, 500);
+        return c.json({
+          error: 'Failed to upload file',
+          details: error.message
+        }, 500);
       }
     }
   )

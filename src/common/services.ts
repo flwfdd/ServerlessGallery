@@ -10,7 +10,7 @@ export interface FileMetadata {
 }
 
 export interface StorageService {
-    put(key: string, data: ArrayBuffer, metadata?: Record<string, string>): Promise<void>;
+    put(key: string, data: ReadableStream | ArrayBuffer | Blob, metadata?: Record<string, string>): Promise<{ etag?: string }>;
     get(key: string): Promise<{ body: ReadableStream | ArrayBuffer | null, metadata?: Record<string, any> } | null>;
     delete(key: string): Promise<void>;
     head(key: string): Promise<Record<string, any> | null>; // For checking existence and metadata

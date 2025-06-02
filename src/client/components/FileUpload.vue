@@ -7,7 +7,7 @@
           class="absolute bottom-2 left-0 right-0 h-2 bg-cyan-300 dark:bg-cyan-400/60 opacity-60 transform -rotate-1">
         </div>
         <h2 class="text-xl sm:text-2xl font-bold text-slate-800 dark:text-slate-100 mb-2 relative">{{ t('upload.title')
-        }}
+          }}
         </h2>
       </div>
 
@@ -36,13 +36,13 @@
           <div class="flex items-center justify-between mb-3">
             <div class="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
               <div
-                class="w-10 h-10 sm:w-12 sm:h-12 bg-rose-200 dark:bg-rose-600/50 rounded-xl flex items-center justify-center transform -rotate-2 hover:rotate-0 transition-transform duration-200 flex-shrink-0">
-                <component :is="getFileIcon(index)" :class="{ 'animate-spin': isUploading }"
+                class="w-10 h-10 sm:w-12 sm:h-12 bg-rose-200 dark:bg-rose-600/50 rounded-xl flex items-center justify-center flex-shrink-0">
+                <component :is="getFileIcon(index)" :class="{ 'animate-spin': fileStatuses[index] === 'uploading' }"
                   class="w-5 h-5 sm:w-6 sm:h-6 text-rose-700 dark:text-rose-300" />
               </div>
               <div class="min-w-0 flex-1">
                 <p class="font-semibold text-slate-800 dark:text-slate-200 text-sm sm:text-base truncate">{{ file.name
-                }}</p>
+                  }}</p>
                 <p class="text-slate-600 dark:text-slate-400 text-xs sm:text-sm">{{ formatFileSize(file.size) }}
                 </p>
               </div>

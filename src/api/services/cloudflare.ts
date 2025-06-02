@@ -20,12 +20,17 @@ export class CloudflareR2Service implements StorageService {
         return fullKey.replace(/\/\/+/g, '/'); // Normalize multiple slashes
     }
 
-    async put(key: string, data: ArrayBuffer, metadata?: Record<string, string>): Promise<void> {
+    async put(key: string, data: ReadableStream | ArrayBuffer | Blob, metadata?: Record<string, string>): Promise<{ etag?: string; size?: number }> {
         const httpMetadata: Record<string, string> = {};
         if (metadata?.contentType) {
             httpMetadata.contentType = metadata.contentType;
         }
-        await this.bucket.put(this.getFullKey(key), data, { httpMetadata });
+
+        const result = await this.bucket.put(this.getFullKey(key), data as any, { httpMetadata });
+
+        return {
+            etag: result.etag
+        };
     }
 
     async get(key: string): Promise<{ body: ReadableStream<Uint8Array> | ArrayBuffer | null; metadata?: Record<string, any> } | null> {

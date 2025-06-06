@@ -256,6 +256,10 @@
       </div>
     </div>
   </section>
+
+  <!-- 密钥输入模态框 -->
+  <SecretKeyModal :show="showSecretKeyModal" @confirm="handleSecretKeyConfirm" @cancel="handleSecretKeyCancel"
+    ref="secretKeyModalRef" />
 </template>
 
 <script setup lang="ts">
@@ -282,6 +286,7 @@ import { useI18n } from 'vue-i18n';
 import type { AppType } from '../../api/index';
 import type { FileMetadata, ListFilesOptions } from '../../common/services';
 import FileIcon from './FileIcon.vue';
+import SecretKeyModal from './SecretKeyModal.vue';
 
 const { t } = useI18n();
 const client = hc<AppType>('/');
@@ -302,6 +307,10 @@ const sortOrder = ref<ListFilesOptions['sort']>('desc');
 const currentOffset = ref(0);
 const currentLimit = ref(20);
 const totalFiles = ref<number | null>(null);
+
+// 权限相关状态
+const showSecretKeyModal = ref(false);
+const secretKeyModalRef = ref<InstanceType<typeof SecretKeyModal>>();
 
 // 筛选选项
 const fileTypeOptions = computed(() => [
@@ -345,6 +354,13 @@ const loadFiles = async () => {
     }
 
     const response = await client.api.files.$get({ query: options });
+
+    // 处理401权限错误
+    if (response.status === 401) {
+      showSecretKeyModal.value = true;
+      return;
+    }
+
     const data = await response.json();
 
     if (response.ok) {
@@ -360,6 +376,74 @@ const loadFiles = async () => {
   } finally {
     isLoadingFiles.value = false;
   }
+};
+
+// 处理密钥确认
+const handleSecretKeyConfirm = async (secretKey: string) => {
+  // 设置cookie
+  setCookie('secret-key', secretKey);
+
+  // 关闭模态框
+  showSecretKeyModal.value = false;
+
+  // 重新加载文件列表以验证密钥
+  const tempLoadingState = isLoadingFiles.value;
+  isLoadingFiles.value = true;
+
+  try {
+    const options: Record<string, string> = {
+      limit: currentLimit.value.toString(),
+      offset: currentOffset.value.toString(),
+      sortBy: sortBy.value || 'uploaded_at',
+      sort: sortOrder.value || 'desc',
+    };
+
+    if (selectedMimeType.value) {
+      options.mime_type = selectedMimeType.value;
+    }
+
+    if (searchQuery.value.trim()) {
+      options.search = searchQuery.value.trim();
+    }
+
+    const response = await client.api.files.$get({ query: options });
+
+    if (response.status === 401) {
+      // 密钥仍然无效，显示错误并重新打开模态框
+      showSecretKeyModal.value = true;
+      secretKeyModalRef.value?.showError(t('auth.invalidSecretKey'));
+      return;
+    }
+
+    const data = await response.json();
+
+    if (response.ok) {
+      fileList.value = (data as any).files || [];
+      totalFiles.value = (data as any).count || null;
+    } else {
+      console.error('Failed to load files:', data);
+      fileList.value = [];
+    }
+  } catch (error) {
+    console.error('Error loading files:', error);
+    fileList.value = [];
+  } finally {
+    isLoadingFiles.value = tempLoadingState;
+  }
+};
+
+// 处理密钥取消
+const handleSecretKeyCancel = () => {
+  showSecretKeyModal.value = false;
+  fileList.value = [];
+  isLoadingFiles.value = false;
+};
+
+// Cookie工具函数
+const setCookie = (name: string, value: string, days: number = 30) => {
+  const expires = new Date();
+  expires.setTime(expires.getTime() + (days * 24 * 60 * 60 * 1000));
+  document.cookie = `${name}=${encodeURIComponent(value)};expires=${expires.toUTCString()};path=/;SameSite=Lax`;
 };
 
 // 分页

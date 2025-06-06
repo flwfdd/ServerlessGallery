@@ -121,5 +121,10 @@
         "loadFailed": "Load failed",
         "networkError": "Network error, please check connection",
         "serverError": "Server error"
+    },
+    "auth": {
+        "enterSecretKey": "Please enter the secret key:",
+        "invalidSecretKey": "Invalid secret key",
+        "unauthorized": "Unauthorized access"
     }
 }

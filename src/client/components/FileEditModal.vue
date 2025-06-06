@@ -33,7 +33,7 @@
                 <div class="space-y-2 sm:space-y-3">
                   <label class="block text-sm font-bold text-slate-800 dark:text-slate-200">{{
                     t('fileInfo.title')
-                    }}</label>
+                  }}</label>
                   <input v-model="editForm.title" type="text" :placeholder="t('fileInfo.titlePlaceholder')"
                     class="w-full rounded-lg sm:rounded-xl border-2 border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base text-slate-800 dark:text-slate-200 placeholder-slate-500 dark:placeholder-slate-400 focus:border-cyan-300 dark:focus:border-cyan-500 focus:outline-none transition-all duration-150 hover:border-slate-300 dark:hover:border-slate-500 focus:scale-[1.02]" />
                 </div>

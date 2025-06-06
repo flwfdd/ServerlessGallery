@@ -7,7 +7,7 @@
           class="absolute bottom-2 left-0 right-0 h-2 bg-cyan-300 dark:bg-cyan-400/60 opacity-60 transform -rotate-1">
         </div>
         <h2 class="text-xl sm:text-2xl font-bold text-slate-800 dark:text-slate-100 mb-2 relative">{{ t('upload.title')
-        }}
+          }}
         </h2>
       </div>
 
@@ -52,7 +52,7 @@
               </div>
               <div class="min-w-0 flex-1">
                 <p class="font-semibold text-slate-800 dark:text-slate-200 text-sm sm:text-base truncate">{{ file.name
-                }}</p>
+                  }}</p>
                 <p class="text-slate-600 dark:text-slate-400 text-xs sm:text-sm">{{ formatFileSize(file.size) }}
                 </p>
               </div>

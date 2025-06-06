@@ -121,5 +121,10 @@
         "loadFailed": "加载失败",
         "networkError": "网络错误，请检查连接",
         "serverError": "服务器错误"
+    },
+    "auth": {
+        "enterSecretKey": "请输入访问密钥：",
+        "invalidSecretKey": "访问密钥无效",
+        "unauthorized": "未授权访问"
     }
 }

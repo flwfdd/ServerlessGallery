@@ -2,6 +2,7 @@ import type { D1Database, R2Bucket } from '@cloudflare/workers-types';
 import { zValidator } from '@hono/zod-validator';
 import type { Context } from 'hono';
 import { Hono } from 'hono';
+import { getCookie } from 'hono/cookie';
 import { validator } from 'hono/validator';
 import { z } from 'zod';
 
@@ -25,12 +26,36 @@ const htmlShell = (clientScriptPath: string, stylePath: string, faviconPath: str
   </html>
 `;
 
+// 权限校验中间件
+const authMiddleware = async (c: Context, next: () => Promise<void>) => {
+  const secretKey = c.env.SECRET_KEY;
+
+  // 如果SECRET_KEY为空，跳过权限检查
+  if (!secretKey) {
+    return next();
+  }
+
+  // 从cookie或header获取提供的密钥
+  const providedKey = getCookie(c, 'secret-key');
+
+  // 如果没有提供密钥或密钥不匹配，返回401
+  if (!providedKey || providedKey !== secretKey) {
+    return c.json({
+      error: 'Unauthorized',
+      message: 'Valid secret key required'
+    }, 401);
+  }
+
+  return next();
+};
+
 // Define bindings directly in Hono generic for better type inference with c.env
 const app = new Hono<{
   Bindings: {
     BUCKET: R2Bucket;
     DB: D1Database;
     IMAGES: ImagesBinding;
+    SECRET_KEY: string;
   }
 }>();
 
@@ -56,6 +81,7 @@ const route = app
   })
   .get(
     '/api/files',
+    authMiddleware,
     zValidator('query', ListFilesOptionsSchema, (result, c) => {
       if (!result.success) {
         return c.json({ error: 'Invalid query parameters', issues: result.error.issues }, 400);
@@ -87,6 +113,7 @@ const route = app
   )
   .post(
     '/api/files',
+    authMiddleware,
     zValidator('form', fileUploadFormSchema, (result, c) => {
       if (!result.success) {
         return c.json({ error: 'Invalid form data', issues: result.error.issues }, 400);
@@ -258,6 +285,7 @@ const route = app
     }
   })
   .put('/api/files/:filename',
+    authMiddleware,
     zValidator('json', fileUpdateSchema, (result, c) => {
       if (!result.success) {
         return c.json({ error: 'Invalid JSON data', issues: result.error.issues }, 400);
@@ -294,7 +322,7 @@ const route = app
       }
     }
   )
-  .delete('/api/files/:filename', async (c) => {
+  .delete('/api/files/:filename', authMiddleware, async (c) => {
     const { filename } = c.req.param();
     const storageService = new CloudflareR2Service(c.env.BUCKET as R2Bucket, 'files');
     const dbService = new CloudflareD1Service(c.env.DB as D1Database);

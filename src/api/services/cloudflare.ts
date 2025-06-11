@@ -118,8 +118,8 @@ export class CloudflareD1Service implements DatabaseService {
         }
 
         // Add ORDER BY
-        if (options?.sortBy) {
-            const sortColumn = options.sortBy === 'uploaded_at' ? 'uploaded_at' : 'size';
+        if (options?.sort_by) {
+            const sortColumn = options.sort_by === 'uploaded_at' ? 'uploaded_at' : 'size';
             const sortOrder = options.sort === 'desc' ? 'DESC' : 'ASC';
             query += ` ORDER BY ${sortColumn} ${sortOrder}`;
         } else {

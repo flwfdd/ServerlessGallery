@@ -13,8 +13,8 @@
 
       <!-- 上传拖拽区域 -->
       <div v-if="!isUploading" class="mb-4 sm:mb-6">
-        <label @click="fileInput?.click()" @dragover.prevent="handleDragOver" @dragleave.prevent="handleDragLeave"
-          @drop.prevent="handleFileDrop" class="block cursor-pointer group">
+        <label @dragover.prevent="handleDragOver" @dragleave.prevent="handleDragLeave" @drop.prevent="handleFileDrop"
+          class="block cursor-pointer group">
           <input ref="fileInput" type="file" @change="handleFileChange" multiple accept="*/*" class="sr-only" />
           <div
             class="border-3 border-dashed transition-all duration-200 rounded-2xl p-6 sm:p-12 text-center group-hover:scale-[1.02]"
@@ -169,6 +169,7 @@ import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import type { AppType } from '../../api/index';
 
+
 const { t } = useI18n();
 const client = hc<AppType>('/');
 
@@ -184,9 +185,9 @@ const isUploading = ref(false);
 const uploadProgress = ref(0);
 const uploadResults = ref<Array<any>>([]);
 
-// 进度追踪状态
+// 简化的进度追踪状态
 const fileProgresses = ref<Record<number, number>>({});
-const fileStatuses = ref<Record<number, 'waiting' | 'uploading' | 'completed' | 'error'>>({});
+const fileStatuses = ref<Record<number, 'waiting' | 'uploading' | 'completed' | 'error' | 'duplicate'>>({});
 const currentUploadingFile = ref('');
 const completedFiles = ref(0);
 
@@ -214,6 +215,7 @@ const getUploadStatusText = (index: number) => {
     case 'uploading': return t('upload.uploading');
     case 'completed': return t('upload.completed');
     case 'error': return t('upload.error');
+    case 'duplicate': return t('upload.duplicate');
     default: return '';
   }
 };
@@ -225,6 +227,7 @@ const getProgressBarClass = (index: number) => {
     case 'uploading': return 'bg-gradient-to-r from-cyan-400 to-cyan-600 dark:from-cyan-500 dark:to-cyan-700';
     case 'completed': return 'bg-gradient-to-r from-green-400 to-green-600 dark:from-green-500 dark:to-green-700';
     case 'error': return 'bg-gradient-to-r from-red-400 to-red-600 dark:from-red-500 dark:to-red-700';
+    case 'duplicate': return 'bg-gradient-to-r from-orange-400 to-orange-600 dark:from-orange-500 dark:to-orange-700';
     default: return 'bg-slate-400 dark:bg-slate-500';
   }
 };
@@ -266,12 +269,131 @@ const clearAllFiles = () => {
   }
 };
 
-// 单个文件上传函数（支持进度追踪）
-// 由于 Hono RPC 不支持上传进度，所以这里使用 XMLHttpRequest 来实现
+// 文件大小限制常量
+const MAX_UPLOAD_SIZE = 10 * 1024 * 1024 * 1024; // 10GB - 上传的最大文件大小
+const MAX_SINGLE_UPLOAD_SIZE = 50 * 1024 * 1024; // 50MB - 单次上传的最大文件大小
+const CHUNK_SIZE = 25 * 1024 * 1024; // 25MB - 分片大小
+
+// 并发控制器类
+class ConcurrentUploadController {
+  private maxConcurrency: number;
+  private activeWorkers: number = 0;
+  private taskQueue: Array<() => Promise<any>> = [];
+  private totalTasks: number = 0;
+  private progressCallback?: (progress: number) => void;
+  private partialProgresses: Map<number, number> = new Map(); // 存储每个任务的部分进度
+
+  constructor(maxConcurrency: number = 3) {
+    this.maxConcurrency = maxConcurrency;
+  }
+
+  // 添加任务到队列（生产者）
+  addTask(task: () => Promise<any>, taskId: number) {
+    this.taskQueue.push(task);
+    this.totalTasks++;
+    this.partialProgresses.set(taskId, 0);
+  }
+
+  // 设置进度回调
+  setProgressCallback(callback: (progress: number) => void) {
+    this.progressCallback = callback;
+  }
+
+  // 更新特定任务的部分进度
+  updatePartialProgress(taskId: number, progress: number) {
+    this.partialProgresses.set(taskId, progress);
+    this.updateTotalProgress();
+  }
+
+  // 更新总进度（线程安全）
+  private updateTotalProgress() {
+    if (this.progressCallback && this.totalTasks > 0) {
+      // 计算所有任务的总进度（每个任务的进度范围是0-1）
+      let totalProgress = 0;
+
+      for (const partialProgress of this.partialProgresses.values()) {
+        totalProgress += partialProgress;
+      }
+
+      const progressPercentage = (totalProgress / this.totalTasks) * 100;
+      this.progressCallback(Math.min(progressPercentage, 99)); // 留1%给完成步骤
+    }
+  }
+
+  // 标记任务完成
+  markTaskCompleted(taskId: number) {
+    this.partialProgresses.set(taskId, 1); // 完成的任务进度为1
+    this.updateTotalProgress();
+  }
+
+  // 启动工作者（消费者）
+  async startWorkers(): Promise<any[]> {
+    const results: any[] = [];
+    const workers: Promise<void>[] = [];
+
+    // 启动工作者
+    for (let i = 0; i < Math.min(this.maxConcurrency, this.taskQueue.length); i++) {
+      workers.push(this.worker(results));
+    }
+
+    // 等待所有工作者完成
+    await Promise.all(workers);
+    return results;
+  }
+
+  // 工作者函数
+  private async worker(results: any[]) {
+    this.activeWorkers++;
+
+    while (this.taskQueue.length > 0) {
+      const task = this.taskQueue.shift();
+      if (!task) break;
+
+      try {
+        const result = await task();
+        results.push(result);
+      } catch (error) {
+        results.push({ error });
+      }
+    }
+
+    this.activeWorkers--;
+  }
+}
+
+// 单个文件上传函数（支持进度追踪和MD5计算）
 const uploadSingleFile = (file: File, index: number): Promise<any> => {
+  return new Promise(async (resolve, reject) => {
+    try {
+      // 计算文件指纹（很快，不需要显示进度）
+      const hash = await calculateFileHash(file);
+
+      // 直接开始上传
+      fileStatuses.value[index] = 'uploading';
+      fileProgresses.value[index] = 0;
+
+      // 根据文件大小选择上传方式
+      if (file.size > MAX_SINGLE_UPLOAD_SIZE) {
+        const result = await uploadFileMultipart(file, index, hash);
+        resolve(result);
+      } else {
+        const result = await uploadFileSingle(file, index, hash);
+        resolve(result);
+      }
+
+    } catch (error) {
+      fileStatuses.value[index] = 'error';
+      reject(error);
+    }
+  });
+};
+
+// 单次上传实现
+const uploadFileSingle = (file: File, index: number, hash: string): Promise<any> => {
   return new Promise((resolve, reject) => {
     const formData = new FormData();
     formData.append('file', file);
+    formData.append('hash', hash);
 
     const xhr = new XMLHttpRequest();
 
@@ -280,7 +402,6 @@ const uploadSingleFile = (file: File, index: number): Promise<any> => {
       if (event.lengthComputable) {
         const progress = (event.loaded / event.total) * 100;
         fileProgresses.value[index] = progress;
-        fileStatuses.value[index] = 'uploading';
       }
     });
 
@@ -290,7 +411,14 @@ const uploadSingleFile = (file: File, index: number): Promise<any> => {
         try {
           const response = JSON.parse(xhr.responseText);
           fileProgresses.value[index] = 100;
-          fileStatuses.value[index] = 'completed';
+
+          // 检查是否是重复文件
+          if (response.exists || response.duplicate) {
+            fileStatuses.value[index] = 'duplicate';
+          } else {
+            fileStatuses.value[index] = 'completed';
+          }
+
           completedFiles.value++;
           resolve(response);
         } catch (error) {
@@ -323,6 +451,202 @@ const uploadSingleFile = (file: File, index: number): Promise<any> => {
     xhr.open('POST', '/api/files');
     xhr.send(formData);
   });
+};
+
+// 上传单个分片（支持部分进度回调）
+const uploadPart = async (
+  chunk: Blob,
+  uploadId: string,
+  key: string,
+  partNumber: number,
+  onPartProgress?: (progress: number) => void
+): Promise<{ partNumber: number; etag: string }> => {
+  return new Promise((resolve, reject) => {
+    const url = `/api/files/multipart/upload?upload_id=${encodeURIComponent(uploadId)}&key=${encodeURIComponent(key)}&part_number=${partNumber}`;
+    const xhr = new XMLHttpRequest();
+
+    // 上传进度处理
+    xhr.upload.addEventListener('progress', (event) => {
+      if (event.lengthComputable && onPartProgress) {
+        const progress = (event.loaded / event.total) * 100;
+        onPartProgress(progress / 100); // 转换为0-1的小数
+      }
+    });
+
+    // 完成处理
+    xhr.addEventListener('load', () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        try {
+          const response = JSON.parse(xhr.responseText);
+          resolve(response);
+        } catch (error) {
+          reject(new Error('Invalid response format'));
+        }
+      } else {
+        try {
+          const errorData = JSON.parse(xhr.responseText);
+          reject(new Error(errorData.error || `HTTP ${xhr.status}: ${xhr.statusText}`));
+        } catch {
+          reject(new Error(`HTTP ${xhr.status}: ${xhr.statusText}`));
+        }
+      }
+    });
+
+    // 错误处理
+    xhr.addEventListener('error', () => {
+      reject(new Error('Network error during part upload'));
+    });
+
+    // 中断处理
+    xhr.addEventListener('abort', () => {
+      reject(new Error('Part upload was aborted'));
+    });
+
+    xhr.open('PUT', url);
+    xhr.send(chunk);
+  });
+};
+
+// 分片上传函数
+const uploadFileMultipart = async (file: File, index: number, hash: string): Promise<any> => {
+  try {
+    // 1. 创建分片上传
+    const createResponse = await client.api.files.multipart.create.$post({
+      json: {
+        filename: file.name,
+        hash: hash,
+      },
+    });
+
+    if (!createResponse.ok) {
+      throw new Error(`Failed to create multipart upload: ${createResponse.statusText}`);
+    }
+
+    const createData = await createResponse.json();
+
+    // 检查是否是重复文件
+    if ('exists' in createData && createData.exists) {
+      fileProgresses.value[index] = 100;
+      fileStatuses.value[index] = 'duplicate';
+      completedFiles.value++;
+      return createData;
+    }
+
+    // 计算分片数量
+    const totalParts = Math.ceil(file.size / CHUNK_SIZE);
+    console.log(`Started multipart upload for ${file.name}: ${totalParts} parts, hash: ${hash}, file size: ${file.size} bytes`);
+
+    // 2. 使用并发控制器进行并行上传
+    let upload_id, key: string;
+    if ('upload_id' in createData && 'key' in createData) {
+      upload_id = createData.upload_id;
+      key = createData.key;
+    } else {
+      throw new Error('Invalid response format');
+    }
+
+    // 创建并发控制器（最多3个并发）
+    const uploadController = new ConcurrentUploadController(3);
+
+    // 设置进度回调
+    uploadController.setProgressCallback((progress) => {
+      fileProgresses.value[index] = progress;
+    });
+
+    // 生产者：将所有分片任务加入队列
+    for (let partNumber = 1; partNumber <= totalParts; partNumber++) {
+      const start = (partNumber - 1) * CHUNK_SIZE;
+      const end = Math.min(start + CHUNK_SIZE, file.size);
+      const chunk = file.slice(start, end);
+
+      console.log(`Adding part ${partNumber}/${totalParts} to queue: ${chunk.size} bytes`);
+
+      // 创建上传任务
+      const uploadTask = () => {
+        return new Promise<{ partNumber: number; etag: string }>((resolve, reject) => {
+          uploadPart(chunk, upload_id, key, partNumber, (partProgress) => {
+            // 更新这个分片的进度（0-1范围）
+            uploadController.updatePartialProgress(partNumber, partProgress);
+          })
+            .then(result => {
+              // 标记任务完成
+              uploadController.markTaskCompleted(partNumber);
+              console.log(`Completed part ${partNumber}/${totalParts} with etag: ${result.etag}`);
+              resolve(result);
+            })
+            .catch(reject);
+        });
+      };
+
+      uploadController.addTask(uploadTask, partNumber);
+    }
+
+    // 消费者：启动工作者开始并发上传
+    console.log(`Starting concurrent upload with ${Math.min(3, totalParts)} workers`);
+    const results = await uploadController.startWorkers();
+
+    // 检查是否有错误
+    const errors = results.filter(result => result.error);
+    if (errors.length > 0) {
+      throw new Error(`Failed to upload ${errors.length} parts: ${errors[0].error.message}`);
+    }
+
+    // 提取上传结果
+    const uploadedParts = results.filter(result => !result.error) as { partNumber: number; etag: string }[];
+
+    // 3. 完成分片上传
+    const completeResponse = await client.api.files.multipart.complete.$post({
+      json: {
+        filename: file.name,
+        hash: hash,
+        upload_id: upload_id,
+        parts: uploadedParts.sort((a, b) => a.partNumber - b.partNumber),
+        mime_type: file.type || 'application/octet-stream',
+        size: file.size,
+      },
+    });
+
+    if (!completeResponse.ok) {
+      throw new Error(`Failed to complete multipart upload: ${completeResponse.statusText}`);
+    }
+
+    const result = await completeResponse.json() as { exists?: boolean; duplicate?: boolean };
+
+    fileProgresses.value[index] = 100;
+
+    // 检查是否是重复文件
+    if (result.exists || result.duplicate) {
+      fileStatuses.value[index] = 'duplicate';
+    } else {
+      fileStatuses.value[index] = 'completed';
+    }
+
+    completedFiles.value++;
+
+    console.log(`Completed multipart upload for ${file.name}`);
+    return result;
+
+  } catch (error: any) {
+    console.error(`Multipart upload failed for ${file.name}:`, error);
+    fileStatuses.value[index] = 'error';
+
+    // 尝试中止分片上传
+    try {
+      const errorData = error as any;
+      if (errorData.upload_id && errorData.key) {
+        await client.api.files.multipart.abort.$delete({
+          query: {
+            upload_id: errorData.upload_id,
+            key: errorData.key,
+          },
+        });
+      }
+    } catch (abortError) {
+      console.error('Failed to abort multipart upload:', abortError);
+    }
+
+    throw error;
+  }
 };
 
 // 批量上传文件
@@ -371,13 +695,22 @@ const uploadFiles = async () => {
 
   // 显示完成提示
   const successCount = uploadResults.value.filter(result => !('error' in result)).length;
+  const duplicateCount = uploadResults.value.filter(result => result.exists || result.duplicate).length;
+  const uploadedCount = successCount - duplicateCount;
   const totalCount = selectedFiles.value.length;
 
-  if (successCount === totalCount) {
-    emit('showToast', t('upload.success') + ` ${successCount} ${t('fileList.files')}`);
+  let message = '';
+  if (uploadedCount > 0 && duplicateCount > 0) {
+    message = t('upload.completedWithDuplicates', { uploaded: uploadedCount, duplicates: duplicateCount });
+  } else if (uploadedCount > 0) {
+    message = t('upload.success') + ` ${uploadedCount} ${t('fileList.files')}`;
+  } else if (duplicateCount > 0) {
+    message = t('upload.allDuplicates', { count: duplicateCount });
   } else {
-    emit('showToast', `${t('upload.success')}: ${successCount}, ${t('upload.error')}: ${totalCount - successCount}`);
+    message = `${t('upload.success')}: ${successCount}, ${t('upload.error')}: ${totalCount - successCount}`;
   }
+
+  emit('showToast', message);
 
   // 清空选择的文件
   selectedFiles.value = [];
@@ -389,6 +722,27 @@ const uploadFiles = async () => {
 };
 
 // 工具函数
+// 计算文件指纹
+const calculateFileHash = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      try {
+        const buffer = e.target?.result as ArrayBuffer;
+        // 使用 SHA-256 作为文件指纹（浏览器原生支持）
+        const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        resolve(hashHex);
+      } catch (error) {
+        reject(error);
+      }
+    };
+    reader.onerror = () => reject(new Error('Failed to read file'));
+    reader.readAsArrayBuffer(file);
+  });
+};
+
 const formatFileSize = (bytes: number): string => {
   if (bytes === 0) return '0 B';
   const k = 1024;
@@ -397,30 +751,40 @@ const formatFileSize = (bytes: number): string => {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 };
 
-// 文件大小限制 (100MB)
-const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB in bytes
-
 // 通用文件处理函数
 const processNewFiles = (newFiles: File[]) => {
-  // 过滤掉大于100MB的文件
+  // 过滤掉大于 MAX_UPLOAD_SIZE 的文件和显示相应提示
   const validFiles: File[] = [];
   const oversizedFiles: File[] = [];
+  const largeFiles: File[] = [];
 
   newFiles.forEach(file => {
-    if (file.size > MAX_FILE_SIZE) {
+    if (file.size > MAX_UPLOAD_SIZE) {
       oversizedFiles.push(file);
+    } else if (file.size > MAX_SINGLE_UPLOAD_SIZE) {
+      largeFiles.push(file);
+      validFiles.push(file); // 大文件仍然可以上传，但会使用分片上传
     } else {
       validFiles.push(file);
     }
   });
 
-  // 显示过滤结果
+  // 显示文件过滤和提示信息
   if (oversizedFiles.length > 0) {
     const oversizedNames = oversizedFiles.map(f => `${f.name} (${formatFileSize(f.size)})`).join(', ');
     emit('showToast', t('upload.filesFilteredBySize', {
       count: oversizedFiles.length,
       files: oversizedNames,
-      maxSize: '100MB'
+      maxSize: formatFileSize(MAX_UPLOAD_SIZE)
+    }));
+  }
+
+  if (largeFiles.length > 0) {
+    const largeNames = largeFiles.map(f => `${f.name} (${formatFileSize(f.size)})`).join(', ');
+    emit('showToast', t('upload.largeFilesWillUseMultipart', {
+      count: largeFiles.length,
+      files: largeNames,
+      threshold: formatFileSize(MAX_SINGLE_UPLOAD_SIZE)
     }));
   }
 

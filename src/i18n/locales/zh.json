@@ -37,11 +37,16 @@
         "error": "上传失败",
         "waiting": "等待上传",
         "completed": "上传完成",
+        "duplicate": "重复文件已跳过",
+        "duplicateSkipped": "文件已存在，已跳过",
+        "completedWithDuplicates": "已上传 {uploaded} 个文件，跳过 {duplicates} 个重复文件",
+        "allDuplicates": "全部 {count} 个文件均已存在，已跳过",
         "currentFile": "当前文件",
         "addedFiles": "已添加 {count} 个文件",
         "addedFilesWithDuplicates": "已添加 {added} 个文件，跳过 {duplicates} 个重复文件",
         "allDuplicateFiles": "所选文件均已存在，已自动跳过",
         "filesFilteredBySize": "已过滤 {count} 个超过 {maxSize} 的文件：{files}",
+        "largeFilesWillUseMultipart": "{count} 个大文件将使用分片上传：{files} (阈值：{threshold})",
         "clearAll": "清空所有"
     },
     "fileList": {

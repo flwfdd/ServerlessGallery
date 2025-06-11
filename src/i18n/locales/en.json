@@ -37,11 +37,16 @@
         "error": "Upload failed",
         "waiting": "Waiting",
         "completed": "Completed",
+        "duplicate": "Duplicate skipped",
+        "duplicateSkipped": "File already exists, skipped",
+        "completedWithDuplicates": "Uploaded {uploaded} files, skipped {duplicates} duplicates",
+        "allDuplicates": "All {count} files already exist, skipped",
         "currentFile": "Current File",
         "addedFiles": "Added {count} files",
         "addedFilesWithDuplicates": "Added {added} files, skipped {duplicates} duplicates",
         "allDuplicateFiles": "All selected files already exist, automatically skipped",
         "filesFilteredBySize": "Filtered {count} files exceeding {maxSize}: {files}",
+        "largeFilesWillUseMultipart": "{count} large files will use multipart upload: {files} (threshold: {threshold})",
         "clearAll": "Clear All"
     },
     "fileList": {

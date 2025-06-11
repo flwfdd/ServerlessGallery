@@ -302,7 +302,7 @@ const fileList = ref<FileMetadata[]>([]);
 const isLoadingFiles = ref(false);
 const searchQuery = ref('');
 const selectedMimeType = ref('');
-const sortBy = ref<ListFilesOptions['sortBy']>('uploaded_at');
+const sortBy = ref<ListFilesOptions['sort_by']>('uploaded_at');
 const sortOrder = ref<ListFilesOptions['sort']>('desc');
 const currentOffset = ref(0);
 const currentLimit = ref(20);
@@ -341,12 +341,12 @@ const loadFiles = async () => {
     const options: Record<string, string> = {
       limit: currentLimit.value.toString(),
       offset: currentOffset.value.toString(),
-      sortBy: sortBy.value || 'uploaded_at',
+      sort_by: sortBy.value || 'uploaded_at',
       sort: sortOrder.value || 'desc',
     };
 
     if (selectedMimeType.value) {
-      options.mime_type = selectedMimeType.value;
+      options.mimeType = selectedMimeType.value;
     }
 
     if (searchQuery.value.trim()) {
@@ -394,12 +394,12 @@ const handleSecretKeyConfirm = async (secretKey: string) => {
     const options: Record<string, string> = {
       limit: currentLimit.value.toString(),
       offset: currentOffset.value.toString(),
-      sortBy: sortBy.value || 'uploaded_at',
+      sort_by: sortBy.value || 'uploaded_at',
       sort: sortOrder.value || 'desc',
     };
 
     if (selectedMimeType.value) {
-      options.mime_type = selectedMimeType.value;
+      options.mimeType = selectedMimeType.value;
     }
 
     if (searchQuery.value.trim()) {

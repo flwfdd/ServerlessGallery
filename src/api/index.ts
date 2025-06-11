@@ -59,18 +59,77 @@ const app = new Hono<{
   }
 }>();
 
+// 文件大小限制常量
+const MAX_SINGLE_UPLOAD_SIZE = 50 * 1024 * 1024; // 50MB - 单次上传的最大文件大小
+
 // Define Zod schema for file upload
 const fileUploadFormSchema = z.object({
   file: z.instanceof(File, { message: "File is required" })
     .refine(file => file.size > 0, { message: "File cannot be empty" }),
-  title: z.string().optional(),
-  description: z.string().optional(),
+  hash: z.string(),
+});
+
+// 分片上传相关 schema
+const multipartCreateSchema = z.object({
+  filename: z.string(),
+  hash: z.string(),
+});
+
+const multipartUploadSchema = z.object({
+  upload_id: z.string(),
+  key: z.string(),
+  part_number: z.number().min(1).max(10000),
+});
+
+const multipartCompleteSchema = z.object({
+  filename: z.string(),
+  hash: z.string(),
+  upload_id: z.string(),
+  parts: z.array(z.object({
+    partNumber: z.number(),
+    etag: z.string(),
+  })),
+  mime_type: z.string(),
+  size: z.number(),
 });
 
 const fileUpdateSchema = z.object({
   title: z.string().optional(),
   description: z.string().optional(),
 });
+
+const getFileKey = (originalFilename: string, md5: string) => {
+  const fileExtension = originalFilename.split('.').pop();
+  return fileExtension ? `${md5}.${fileExtension}` : md5;
+}
+
+// 安全的流式处理函数 - 不将整个文件加载到内存
+async function processStreamSafely<T>(
+  stream: ReadableStream,
+  processor: (chunk: Uint8Array) => void,
+  options?: { maxSize?: number }
+): Promise<void> {
+  const maxSize = options?.maxSize || 100 * 1024 * 1024; // 默认 100MB 限制
+  const reader = stream.getReader();
+  let processedSize = 0;
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      if (value) {
+        processedSize += value.length;
+        if (processedSize > maxSize) {
+          throw new Error(`Stream size exceeds maximum allowed size: ${maxSize} bytes`);
+        }
+        processor(value);
+      }
+    }
+  } finally {
+    reader.releaseLock();
+  }
+}
 
 const route = app
   .get('/', (c) => {
@@ -120,90 +179,223 @@ const route = app
       }
     }),
     async (c) => {
-      const storageService = new CloudflareR2Service(c.env.BUCKET as R2Bucket, 'files');
-      const dbService = new CloudflareD1Service(c.env.DB as D1Database);
-
-      let tempKey: string | null = null;
-
       try {
-        const { file } = c.req.valid('form');
+        const storageService = new CloudflareR2Service(c.env.BUCKET, 'files');
+        const dbService = new CloudflareD1Service(c.env.DB as D1Database);
+        const { file, hash } = c.req.valid('form');
 
-        const extension = file.name.split('.').pop() || '';
-
-        // Upload to temporary location
-        tempKey = `temp_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
-        const uploadResult = await storageService.put(tempKey, file, {
-          contentType: file.type
-        });
-
-        const etag = uploadResult.etag;
-        if (!etag) {
-          throw new Error('Upload failed: No ETag received from R2');
-        }
-        const finalFilename = `${etag}${extension ? `.${extension}` : ''}`;
-
-        // Check if file already exists in database
-        const existingFileRecord = await dbService.getFile(finalFilename);
-
-        if (existingFileRecord) {
-          // File already exists, delete temporary file and return existing file information
-          await storageService.delete(tempKey);
-          tempKey = null; // Cleaned up
-
+        // 检查文件是否已存在（防止重复上传）
+        const filename = getFileKey(file.name, hash);
+        const existingFile = await storageService.get(filename);
+        if (existingFile) {
           return c.json({
-            message: `File with identical content already exists: ${file.name}`,
-            info: existingFileRecord,
-            url: `/files/${existingFileRecord.filename}`,
+            message: 'File already exists',
+            exists: true,
+            url: `/api/files/${filename}`,
+            metadata: existingFile,
           });
         }
 
-        // Move from temporary location to final location
-        const tempObject = await storageService.get(tempKey);
-        if (!tempObject?.body) {
-          throw new Error('Failed to retrieve uploaded temporary file');
+        // 检查文件大小
+        if (file.size > MAX_SINGLE_UPLOAD_SIZE) {
+          return c.json({
+            error: `File too large. Maximum size is ${MAX_SINGLE_UPLOAD_SIZE / 1024 / 1024}MB`,
+            useMultipart: true
+          }, 413);
         }
 
-        // Upload to final location
-        await storageService.put(finalFilename, tempObject.body as ReadableStream, {
-          contentType: file.type
+        // 上传文件到存储
+        await storageService.put(filename, file.stream(), {
+          contentType: file.type,
         });
 
-        // Delete temporary file after successful upload
-        await storageService.delete(tempKey);
-        tempKey = null; // Cleaned up
-
-        // Save file metadata to database
+        // 保存文件元数据到数据库
         const metadata: FileMetadata = {
-          filename: finalFilename,
+          filename: filename,
           title: file.name,
           description: '',
-          mime_type: file.type || 'application/octet-stream',
-          size: uploadResult.size || file.size,
+          mime_type: file.type,
+          size: file.size,
           uploaded_at: new Date().toISOString(),
         };
+
         await dbService.saveFile(metadata);
 
         return c.json({
-          message: `${file.name} uploaded successfully!`,
-          info: metadata,
-          url: `/files/${finalFilename}`,
+          message: 'File uploaded successfully',
+          url: `/api/files/${filename}`,
+          metadata,
         });
-
       } catch (error: any) {
-        // Ensure temporary file is cleaned up
-        if (tempKey) {
-          try {
-            await storageService.delete(tempKey);
-          } catch (cleanupError) {
-            console.error('Failed to cleanup temporary file:', cleanupError);
-          }
+        console.error('Upload error:', error);
+        return c.json({ error: 'Upload failed', details: error.message }, 500);
+      }
+    }
+  )
+  // 分片上传 API
+  .post(
+    '/api/files/multipart/create',
+    authMiddleware,
+    zValidator('json', multipartCreateSchema, (result, c) => {
+      if (!result.success) {
+        return c.json({ error: 'Invalid JSON data', issues: result.error.issues }, 400);
+      }
+    }),
+    async (c) => {
+      try {
+        const storageService = new CloudflareR2Service(c.env.BUCKET, 'files');
+        const dbService = new CloudflareD1Service(c.env.DB as D1Database);
+        const { filename: originalFilename, hash } = c.req.valid('json');
+
+        if (!hash) {
+          return c.json({ error: 'Hash is required for multipart upload' }, 400);
         }
 
-        console.error('Upload error:', error, error.stack);
+        // 检查文件是否已存在
+        const filename = getFileKey(originalFilename, hash);
+        const existingFile = await storageService.head(filename);
+        if (existingFile) {
+          return c.json({
+            message: 'File already exists',
+            exists: true,
+            url: `/api/files/${filename}`,
+            metadata: existingFile,
+          });
+        }
+        // 创建分片上传
+        const multipartUpload = await c.env.BUCKET.createMultipartUpload(`files/${filename}`);
+
         return c.json({
-          error: 'Failed to upload file',
-          details: error.message
-        }, 500);
+          upload_id: multipartUpload.uploadId,
+          key: filename,
+        });
+      } catch (error) {
+        console.error('Create multipart upload error:', error);
+        return c.json({ error: 'Failed to create multipart upload' }, 500);
+      }
+    }
+  )
+  .put(
+    '/api/files/multipart/upload',
+    authMiddleware,
+    async (c) => {
+      try {
+        const upload_id = c.req.query('upload_id');
+        const key = c.req.query('key');
+        const part_number = c.req.query('part_number');
+
+        if (!upload_id || !key || !part_number) {
+          return c.json({ error: 'Missing upload_id, key, or part_number' }, 400);
+        }
+
+        const partNumberInt = parseInt(part_number, 10);
+        if (isNaN(partNumberInt) || partNumberInt < 1 || partNumberInt > 10000) {
+          return c.json({ error: 'Invalid part number' }, 400);
+        }
+
+        // 获取请求体作为 ReadableStream
+        const body = c.req.raw.body;
+        if (!body) {
+          return c.json({ error: 'No request body provided' }, 400);
+        }
+
+        // 使用 R2 API 上传分片
+        const multipartUpload = c.env.BUCKET.resumeMultipartUpload(`files/${key}`, upload_id);
+        const uploadedPart = await multipartUpload.uploadPart(partNumberInt, body as any);
+
+        return c.json({
+          partNumber: partNumberInt,
+          etag: uploadedPart.etag,
+        });
+      } catch (error) {
+        console.error('Part upload error:', error);
+        return c.json({ error: 'Failed to upload part' }, 500);
+      }
+    }
+  )
+  .post(
+    '/api/files/multipart/complete',
+    authMiddleware,
+    zValidator('json', multipartCompleteSchema, (result, c) => {
+      if (!result.success) {
+        return c.json({ error: 'Invalid JSON data', issues: result.error.issues }, 400);
+      }
+    }),
+    async (c) => {
+      try {
+        const storageService = new CloudflareR2Service(c.env.BUCKET, 'files');
+        const dbService = new CloudflareD1Service(c.env.DB as D1Database);
+        const { upload_id, parts, mime_type, filename, size, hash } = c.req.valid('json');
+
+        // 再次检查文件是否已存在（防止竞争条件）
+        const key = getFileKey(filename, hash);
+        const existingFile = await dbService.getFile(key);
+        if (existingFile) {
+          // 中止当前的分片上传
+          try {
+            const multipartUpload = c.env.BUCKET.resumeMultipartUpload(`files/${key}`, upload_id);
+            await multipartUpload.abort();
+          } catch (abortError) {
+            console.error('Failed to abort multipart upload:', abortError);
+          }
+
+          return c.json({
+            message: 'File already exists',
+            exists: true,
+            url: `/api/files/${key}`,
+            metadata: existingFile,
+          });
+        }
+
+        // 完成分片上传
+        const multipartUpload = c.env.BUCKET.resumeMultipartUpload(`files/${key}`, upload_id);
+        await multipartUpload.complete(parts);
+
+
+        // 保存文件元数据到数据库
+        const metadata: FileMetadata = {
+          filename: key,
+          title: filename,
+          description: '',
+          mime_type: mime_type,
+          size: size,
+          uploaded_at: new Date().toISOString(),
+        };
+
+        await dbService.saveFile(metadata);
+
+        return c.json({
+          message: 'File uploaded successfully',
+          url: `/api/files/${key}`,
+          exists: false,
+          metadata,
+        });
+      } catch (error) {
+        console.error('Complete multipart upload error:', error);
+        return c.json({ error: 'Failed to complete multipart upload' }, 500);
+      }
+    }
+  )
+  .delete(
+    '/api/files/multipart/abort',
+    authMiddleware,
+    async (c) => {
+      try {
+        const upload_id = c.req.query('upload_id');
+        const key = c.req.query('key');
+
+        if (!upload_id || !key) {
+          return c.json({ error: 'Missing upload_id or key' }, 400);
+        }
+
+        // 中止分片上传
+        const multipartUpload = c.env.BUCKET.resumeMultipartUpload(`files/${key}`, upload_id);
+        await multipartUpload.abort();
+
+        return c.json({ message: 'Multipart upload aborted successfully' });
+      } catch (error) {
+        console.error('Abort multipart upload error:', error);
+        return c.json({ error: 'Failed to abort multipart upload' }, 500);
       }
     }
   )
@@ -221,8 +413,10 @@ const route = app
         return c.json({ error: 'File not found in database' }, 404);
       }
 
-      // If not an image or no level specified, redirect to original file
-      if (!fileRecord.mime_type.startsWith('image/') || !level) {
+      // 对于大文件或非图像文件，直接流式返回，不进行压缩处理
+      const isLargeFile = fileRecord.size > 50 * 1024 * 1024; // 50MB 以上视为大文件
+
+      if (!fileRecord.mime_type.startsWith('image/') || !level || isLargeFile) {
         return c.redirect(`/r2/files/${filename}`, 302);
       }
 
@@ -245,37 +439,59 @@ const route = app
         return c.redirect(`/r2/cache/${validLevel}/${filename}`, 302);
       }
 
-      // Get original image from R2
-      const originalObject = await originalFileStorage.get(filename);
-      if (!originalObject || !originalObject.body) {
-        return c.json({ error: 'Original file not found in storage' }, 404);
-      }
-
-      try {
-        // Convert R2 object body to ArrayBuffer for ImageProcessingService
-        const imageData = originalObject.body instanceof ReadableStream
-          ? await streamToArrayBuffer(originalObject.body)
-          : originalObject.body as ArrayBuffer;
-
-        // Use CloudFlareImageService for compression
-        const imageService = new CloudFlareImageService(c.env.IMAGES);
-        const compressed = await imageService.compress(imageData, validLevel);
-
-        if (compressed && compressed.data) {
-          // Cache the compressed image
-          await cacheStorage.put(filename, compressed.data, { contentType: compressed.mimeType });
-
-          console.log(`Successfully cached ${filename} at level ${validLevel}`);
-
-          // Redirect to cached version
-          return c.redirect(`/r2/cache/${validLevel}/${filename}`, 302);
-        } else {
-          throw new Error('Image compression failed');
+      // 对于小图像文件，尝试压缩
+      if (fileRecord.size <= 10 * 1024 * 1024) { // 10MB 以下的图像才进行压缩
+        // Get original image from R2
+        const originalObject = await originalFileStorage.get(filename);
+        if (!originalObject || !originalObject.body) {
+          return c.json({ error: 'Original file not found in storage' }, 404);
         }
 
-      } catch (transformError) {
-        console.error(`Failed to process ${filename} at level ${validLevel}:`, transformError);
-        // Transform failed, redirect to original
+        try {
+          // 安全地处理小图像文件
+          const chunks: Uint8Array[] = [];
+          let totalSize = 0;
+
+          await processStreamSafely(
+            originalObject.body as ReadableStream,
+            (chunk) => {
+              chunks.push(chunk);
+              totalSize += chunk.length;
+            },
+            { maxSize: 10 * 1024 * 1024 } // 10MB 限制
+          );
+
+          // 重新组合为 ArrayBuffer
+          const imageData = new Uint8Array(totalSize);
+          let offset = 0;
+          for (const chunk of chunks) {
+            imageData.set(chunk, offset);
+            offset += chunk.length;
+          }
+
+          // Use CloudFlareImageService for compression
+          const imageService = new CloudFlareImageService(c.env.IMAGES);
+          const compressed = await imageService.compress(imageData.buffer, validLevel);
+
+          if (compressed && compressed.data) {
+            // Cache the compressed image
+            await cacheStorage.put(filename, compressed.data, { contentType: compressed.mimeType });
+
+            console.log(`Successfully cached ${filename} at level ${validLevel}`);
+
+            // Redirect to cached version
+            return c.redirect(`/r2/cache/${validLevel}/${filename}`, 302);
+          } else {
+            throw new Error('Image compression failed');
+          }
+
+        } catch (transformError) {
+          console.error(`Failed to process ${filename} at level ${validLevel}:`, transformError);
+          // Transform failed, redirect to original
+          return c.redirect(`/r2/files/${filename}`, 302);
+        }
+      } else {
+        // 大图像文件直接返回原文件
         return c.redirect(`/r2/files/${filename}`, 302);
       }
 
@@ -384,28 +600,139 @@ const route = app
     }
   );
 
-// Helper to convert ReadableStream to ArrayBuffer
-async function streamToArrayBuffer(stream: ReadableStream<Uint8Array>): Promise<ArrayBuffer> {
-  const reader = stream.getReader();
-  const chunks: Uint8Array[] = [];
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    if (value) chunks.push(value);
-  }
-  const totalLength = chunks.reduce((acc, chunk) => acc + chunk.length, 0);
-  const buffer = new Uint8Array(totalLength);
-  let offset = 0;
-  for (const chunk of chunks) {
-    buffer.set(chunk, offset);
-    offset += chunk.length;
-  }
-  return buffer.buffer;
-}
-
 // --- Helper to stream R2 object with headers ---
 async function streamR2Object(c: Context, storageService: StorageService, key: string, cacheControl?: string) {
   try {
+    // Check for Range header for partial content requests
+    const rangeHeader = c.req.header('Range');
+
+    if (rangeHeader) {
+      // For range requests, use R2 bucket directly to get native range support
+      const rangeMatch = rangeHeader.match(/bytes=(\d*)-(\d*)/);
+      if (rangeMatch) {
+        const start = rangeMatch[1] ? parseInt(rangeMatch[1], 10) : undefined;
+        const end = rangeMatch[2] ? parseInt(rangeMatch[2], 10) : undefined;
+
+        // Use R2's native range support
+        const rangeOptions: any = {};
+
+        if (start !== undefined && end !== undefined) {
+          // Both start and end specified: bytes=start-end
+          rangeOptions.offset = start;
+          rangeOptions.length = end - start + 1;
+        } else if (start !== undefined && end === undefined) {
+          // Only start specified: bytes=start-
+          rangeOptions.offset = start;
+        } else if (start === undefined && end !== undefined) {
+          // Only end specified: bytes=-suffix (last N bytes)
+          rangeOptions.suffix = end + 1;
+        }
+
+        try {
+          // 检查是否在本地开发环境
+          const isLocalDev = typeof globalThis.navigator === 'undefined' ||
+            c.req.url.includes('localhost') ||
+            c.req.url.includes('127.0.0.1');
+
+          if (isLocalDev) {
+            // 本地开发环境：使用常规get然后手动处理范围
+            const fullObject = await storageService.get(key);
+            if (!fullObject || !fullObject.body) {
+              return c.json({ error: 'Object Not Found' }, 404);
+            }
+
+            // 获取完整内容的大小
+            const contentLength = fullObject.metadata?.contentLength;
+            if (!contentLength) {
+              return c.json({ error: 'Content length unavailable' }, 500);
+            }
+
+            // 验证范围
+            const actualStart = start || 0;
+            const actualEnd = end !== undefined ? Math.min(end, contentLength - 1) : contentLength - 1;
+
+            if (actualStart >= contentLength || actualEnd >= contentLength || actualStart > actualEnd) {
+              const headers = new Headers();
+              headers.set('Content-Range', `bytes */${contentLength}`);
+              return new Response('Range Not Satisfiable', {
+                status: 416,
+                headers,
+              });
+            }
+
+            // 对于小范围或小文件，读取并切片
+            const rangeSize = actualEnd - actualStart + 1;
+            if (rangeSize <= 10 * 1024 * 1024 || contentLength <= 50 * 1024 * 1024) { // 10MB范围或50MB文件
+              try {
+                // 读取完整对象
+                const response = new Response(fullObject.body as ReadableStream);
+                const arrayBuffer = await response.arrayBuffer();
+                const slice = arrayBuffer.slice(actualStart, actualEnd + 1);
+
+                const headers = new Headers();
+                if (fullObject.metadata?.contentType) {
+                  headers.set('Content-Type', fullObject.metadata.contentType);
+                }
+                if (fullObject.metadata?.etag) {
+                  headers.set('ETag', fullObject.metadata.etag);
+                }
+                if (cacheControl) {
+                  headers.set('Cache-Control', cacheControl);
+                }
+                headers.set('Content-Range', `bytes ${actualStart}-${actualEnd}/${contentLength}`);
+                headers.set('Content-Length', rangeSize.toString());
+                headers.set('Accept-Ranges', 'bytes');
+
+                return new Response(slice, {
+                  status: 206,
+                  headers,
+                });
+              } catch (sliceError) {
+                console.error('Local range slicing failed:', sliceError);
+                // Fall through to production logic
+              }
+            }
+          }
+
+          // 生产环境或本地环境大文件：使用R2原生range
+          const r2Object = await c.env.BUCKET.get(`files/${key}`, { range: rangeOptions });
+
+          if (r2Object === null || r2Object.body === null) {
+            return c.json({ error: 'Object Not Found' }, 404);
+          }
+
+          const headers = new Headers();
+          if (r2Object.httpMetadata?.contentType) {
+            headers.set('Content-Type', r2Object.httpMetadata.contentType);
+          }
+          if (r2Object.httpEtag) {
+            headers.set('ETag', r2Object.httpEtag);
+          }
+          if (cacheControl) {
+            headers.set('Cache-Control', cacheControl);
+          }
+
+          // Set range headers using R2Object properties
+          if (r2Object.range) {
+            headers.set('Content-Range', `bytes ${r2Object.range.offset}-${r2Object.range.offset + r2Object.range.length - 1}/${r2Object.size}`);
+            headers.set('Content-Length', r2Object.range.length.toString());
+          } else {
+            headers.set('Content-Length', r2Object.size.toString());
+          }
+          headers.set('Accept-Ranges', 'bytes');
+
+          return new Response(r2Object.body as BodyInit, {
+            status: 206, // Partial Content
+            headers,
+          });
+        } catch (rangeError) {
+          console.error('Range request failed, falling back to full object:', rangeError);
+          // Fall through to regular get
+        }
+      }
+    }
+
+    // For non-range requests or failed range requests, use regular get
     const object = await storageService.get(key);
     if (object === null || object.body === null) {
       return c.json({ error: 'Object Not Found' }, 404);
@@ -422,49 +749,11 @@ async function streamR2Object(c: Context, storageService: StorageService, key: s
       headers.set('Cache-Control', cacheControl);
     }
 
+    // For full objects, we need to get the size from metadata
     const contentLength = object.metadata?.contentLength;
-    if (contentLength === undefined) {
-      // If we don't know the content length, return the full object
-      return new Response(object.body as BodyInit, { headers });
+    if (contentLength !== undefined) {
+      headers.set('Content-Length', contentLength.toString());
     }
-
-    // Check for Range header for partial content requests
-    const rangeHeader = c.req.header('Range');
-
-    if (rangeHeader) {
-      // Parse Range header (e.g., "bytes=0-1023" or "bytes=1024-")
-      const rangeMatch = rangeHeader.match(/bytes=(\d*)-(\d*)/);
-      if (rangeMatch) {
-        const start = rangeMatch[1] ? parseInt(rangeMatch[1], 10) : 0;
-        const end = rangeMatch[2] ? parseInt(rangeMatch[2], 10) : contentLength - 1;
-
-        // Validate range
-        if (start >= contentLength || end >= contentLength || start > end) {
-          headers.set('Content-Range', `bytes */${contentLength}`);
-          return new Response('Range Not Satisfiable', {
-            status: 416,
-            headers,
-          });
-        }
-
-        // Convert stream to array buffer for range extraction
-        const arrayBuffer = await streamToArrayBuffer(object.body as ReadableStream);
-        const chunk = arrayBuffer.slice(start, end + 1);
-
-        // Set partial content headers
-        headers.set('Content-Range', `bytes ${start}-${end}/${contentLength}`);
-        headers.set('Content-Length', chunk.byteLength.toString());
-        headers.set('Accept-Ranges', 'bytes');
-
-        return new Response(chunk, {
-          status: 206,
-          headers,
-        });
-      }
-    }
-
-    // For non-range requests or invalid ranges, return full content
-    headers.set('Content-Length', contentLength.toString());
     headers.set('Accept-Ranges', 'bytes');
 
     return new Response(object.body as BodyInit, {

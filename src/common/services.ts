@@ -20,7 +20,7 @@ export const ListFilesOptionsSchema = z.object({
     limit: z.coerce.number().int().min(1).max(100).default(20),
     offset: z.coerce.number().int().min(0).default(0),
     sort: z.enum(['asc', 'desc']).default('desc'),
-    sortBy: z.enum(['uploaded_at', 'size']).default('uploaded_at'),
+    sort_by: z.enum(['uploaded_at', 'size']).default('uploaded_at'),
     mime_type: z.string().optional(),
     search: z.string().optional(),
 });
